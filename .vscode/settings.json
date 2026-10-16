@@ -1,7 +1,11 @@
 {
     "git.autofetch": true,
-    "git.autofetchPeriod": 60,
+    "git.autofetchPeriod": 30,
     "git.enableSmartCommit": true,
     "git.confirmSync": false,
-    "git.autoStash": true
+    "git.autoStash": true,
+    "gitdoc.enabled": true,
+    "gitdoc.autoCommitDelay": 5000,
+    "gitdoc.autoPush": "afterDelay",
+    "gitdoc.autoPull": "afterDelay"
 }
