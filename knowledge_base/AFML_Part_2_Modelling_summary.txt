@@ -1,0 +1,183 @@
+=== AFML_Part_2_Modelling.pdf (48 pages) ===
+
+--- PAGE 1 ---
+PART 2
+Modelling
+Chapter 6: Ensemble Methods, 93
+Chapter 7: Cross-V alidation in Finance, 103
+Chapter 8: Feature Importance, 113
+Chapter 9: Hyper-Parameter Tuning with Cross-V alidation, 129
+91
+
+--- PAGE 2 ---
+
+
+--- PAGE 3 ---
+CHAPTER 6
+Ensemble Methods
+6.1 MOTIV A TION
+InthischapterwewilldiscusstwoofthemostpopularMLensemblemethods. 1 Inthe
+references and footnotes you will find books and articles that introduce these tech-
+niques.Aseverywhereelseinthisbook,theassumptionisthatyouhavealreadyused
+these approaches. The goal of this chapter is to explain what makes them effective,
+and how to avoid common errors that lead to their misuse in finance.
+6.2 THE THREE SOURCES OF ERRORS
+ML models generally suffer from three errors:2
+1. Bias: This error is caused by unrealistic assumptions. When bias is high, the
+MLalgorithmhasfailedtorecognizeimportantrelationsbetweenfeaturesand
+outcomes. In this situation, the algorithm is said to be “underfit.”
+2. Variance: This error is caused by sensitivity to small changes in the training
+set. When variance is high, the algorithm has overfit the training set, and that
+is why even minimal changes in the training set can produce wildly different
+predictions. Rather than modelling the general patterns in the training set, the
+algorithm has mistaken noise with signal.
+1 For an introduction to ensemble methods, please visit: http://scikit-learn.org/stable/modules/
+ensemble.html.
+2 I would not typically cite Wikipedia, however, on this subject the user may find some of the illustrations
+in this article useful:https://en.wikipedia.org/wiki/Bias%E2%80%93variance_tradeoff.
+93
+
+--- PAGE 4 ---
+94 ENSEMBLE METHODS
+3. Noise: This error is caused by the variance of the observed values, like unpre-
+dictable changes or measurement errors. This is the irreducible error, which
+cannot be explained by any model.
+Consider a training set of observations {xi}i=1,…,n and real-valued outcomes
+{yi}i=1,…,n. Suppose a functionf[x] exists, such thaty = f[x]+𝜀, where𝜀 is white
+noise with E[𝜀i] = 0 and E[𝜀2
+i ] = 𝜎2
+𝜀. We would like to estimate the function̂f[x]
+that best fits f[x], in the sense of making the variance of the estimation error
+E[(yi − ̂f[xi])
+2
+]minimal(themeansquarederrorcannotbezero,becauseofthenoise
+represented by𝜎2
+𝜀). This mean-squared error can be decomposed as
+E
+[
+(yi − ̂f[xi])
+2]
+=
+⎛
+⎜
+⎜
+⎜⎝
+E[̂f[xi]− f[xi]]
+⏟⏞⏞⏞⏞⏞⏞⏟⏞⏞⏞⏞⏞⏞⏟
+bias
+⎞
+⎟
+⎟
+⎟⎠
+2
++V[̂f[xi]]
+⏟⏟⏟
+variance
++ 𝜎2
+𝜀
+⏟⏟⏟
+noise
+An ensemble method is a method that combines a set of weak learners, all based
+on the same learning algorithm, in order to create a (stronger) learner that performs
+better than any of the individual ones. Ensemble methods help reduce bias and/or
+variance.
+6.3 BOOTSTRAP AGGREGATION
+Bootstrapaggregation(bagging)isaneffectivewayofreducingthevarianceinfore-
+casts.Itworksasfollows:First,generate Ntrainingdatasetsbyrandomsampling with
+replacement.Second, fitNestimators, one on each training set. These estimators are
+fit independently from each other, hence the models can be fit in parallel. Third, the
+ensembleforecastisthe simpleaverageoftheindividualforecastsfromthe Nmodels.
+In the case of categorical variables, the probability that an observation belongs to a
+classisgivenbytheproportionofestimatorsthatclassifythatobservationasamem-
+ber of that class (majority voting). When the base estimator can make forecasts with
+apredictionprobability,thebaggingclassifiermayderiveameanoftheprobabilities.
+If you use sklearn’s BaggingClassiﬁer class to compute the out-of-bag
+accuracy, you should be aware of this bug:https://github.com/scikit-learn/scikit-
+learn/issues/8933. One workaround is to re
+
+--- PAGE 5 ---
+BOOTSTRAP AGGREGATION 95
+and the average correlation among their forecasts (̄𝜌):
+V
+[
+1
+N
+N∑
+i=1
+𝜑i[c]
+]
+= 1
+N2
+N∑
+i=1
+( N∑
+j=1
+𝜎i,j
+)
+= 1
+N2
+N∑
+i=1
+(
+𝜎2
+i +
+N∑
+j≠i
+𝜎i𝜎j𝜌i,j
+)
+= 1
+N2
+N∑
+i=1
+⎛
+⎜
+⎜
+⎜
+⎜
+⎜
+⎜
+⎜
+⎜⎝
+̄𝜎2 +
+N∑
+j≠i
+̄𝜎2 ̄𝜌
+⏟⏟⏟
+= (N −1)̄𝜎2 ̄𝜌
+for a fixedi
+⎞
+⎟
+⎟
+⎟
+⎟
+⎟
+⎟
+⎟
+⎟⎠
+= ̄𝜎2 +(N −1)̄𝜎2 ̄𝜌
+N
+= ̄𝜎2
+(
+̄𝜌+ 1− ̄𝜌
+N
+)
+where 𝜎i,j is the covariance of predictions by estimators i,j; ∑N
+i=1 ̄𝜎2 =∑N
+i=1 𝜎2
+i ⇔ ̄𝜎2 = N−1 ∑N
+i=1 𝜎2
+i ; and ∑N
+j≠i ̄𝜎2 ̄𝜌 = ∑N
+j≠i 𝜎i𝜎j𝜌i,j ⇔ ̄𝜌 = (̄𝜎2N(N −1))−1
+∑N
+j≠i 𝜎i𝜎j𝜌i,j.
+The equation above shows that bagging is only effective to the extent that̄𝜌<
+1; as̄𝜌 → 1 ⇒ V[1
+N
+∑N
+i=1 𝜑i[c]] → ̄𝜎2. One of the goals of sequential bootstrapping
+(Chapter 4) is to produce samples as independent as possible, thereby reducinḡ𝜌,
+which should lower the variance of bagging classifiers. Figure 6.1 plots the standard
+deviationofthebaggedpredictionasafunctionof N ∈ [5,30], ̄𝜌 ∈ [0,1]and ̄𝜎 = 1.
+FIGURE 6.1 Standard deviation of the bagged prediction
+

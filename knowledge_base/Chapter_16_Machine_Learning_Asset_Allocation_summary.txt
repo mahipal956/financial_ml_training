@@ -1,0 +1,210 @@
+=== Chapter_16_Machine_Learning_Asset_Allocation.pdf (26 pages) ===
+
+--- PAGE 1 ---
+CHAPTER 16
+Machine Learning Asset Allocation
+16.1 MOTIV A TION
+This chapter introduces the Hierarchical Risk Parity (HRP) approach.1 HRP portfo-
+liosaddressthreemajorconcernsofquadraticoptimizersingeneralandMarkowitz’s
+Critical Line Algorithm (CLA) in particular: instability, concentration, and under-
+performance. HRP applies modern mathematics (graph theory and machine learning
+techniques) to build a diversified portfolio based on the information contained in the
+covariance matrix. However, unlike quadratic optimizers, HRP does not require the
+invertibility of the covariance matrix. In fact, HRP can compute a portfolio on an
+ill-degeneratedorevenasingularcovariancematrix,animpossiblefeatforquadratic
+optimizers. Monte Carlo experiments show that HRP delivers lower out-of-sample
+variance than CLA, even though minimum-variance is CLA’s optimization objec-
+tive. HRP produces less risky portfolios out-of-sample compared to traditional risk
+paritymethods.HistoricalanalyseshavealsoshownthatHRPwouldhaveperformed
+better than standard approaches (Kolanovic et al. [2017], Raffinot [2017]). A practi-
+cal application of HRP is to determine allocations across multiple machine learning
+(ML) strategies.
+16.2 THE PROBLEM WITH CONVEX PORTFOLIO OPTIMIZATION
+Portfolio construction is perhaps the most recurrent financial problem. On a daily
+basis, investment managers must build portfolios that incorporate their views and
+forecasts on risks and returns. This is the primordial question that 24-year-old Harry
+Markowitz attempted to answer more than six decades ago. His monumental insight
+1 A short version of this chapter appeared in theJournal of Portfolio Management,Vo1. 42, No. 4,
+pp. 59–69, Summer of 2016.
+221
+
+--- PAGE 2 ---
+222 MACHINE LEARNING ASSET ALLOCATION
+was to recognize that various levels of risk are associated with different optimal
+portfolios in terms of risk-adjusted returns, hence the notion of “efficient frontier”
+(Markowitz [1952]). One implication is that it is rarely optimal to allocate all assets
+totheinvestmentswithhighestexpectedreturns.Instead,weshouldtakeintoaccount
+thecorrelationsacrossalternativeinvestmentsinordertobuildadiversifiedportfolio.
+Before earning his PhD in 1954, Markowitz left academia to work for the RAND
+Corporation, where he developed the Critical Line Algorithm. CLA is a quadratic
+optimization procedure specifically designed for inequality-constrained portfolio
+optimization problems. This algorithm is notable in that it guarantees that the exact
+solution is found after a known number of iterations, and that it ingeniously circum-
+vents the Karush-Kuhn-Tucker conditions (Kuhn and Tucker [1951]). A description
+andopen-source implementation ofthisalgorithm canbe foundinBailey andL ´opez
+dePrado[2013].Surprisingly,mostfinancialpractitionersstillseemunawareofCLA,
+as they often rely on generic-purpose quadratic programming methods that do not
+guarantee the correct solution or a stopping time.
+Despite of the brilliance of Markowitz’s theory, a number of practical problems
+makeCLAsolutionssomewhatunreliable.Amajorcaveatisthatsmalldeviationsin
+the forecasted returns will cause CLA to produce very different portfolios (Michaud
+[1998]). Given that returns can rarely be forecasted with sufficient accuracy, many
+authors have opted for dropping them altogether and focusing on the covariance
+matrix.Thishasledtorisk-basedassetallocationapproaches,ofwhich“riskparity”is
+aprominentexample(Jurczenko[2015]).Droppingtheforecastsonreturnsimproves
+but does not prevent the instability issues. The reason is that quadratic programming
+methodsrequiretheinversionofapositive-definitecovariancematrix(alleigenvalues
+must be positive). This inversion is prone to large errors whe
+
+--- PAGE 3 ---
+FROM GEOMETRIC TO HIERARCHICAL RELATIONSHIPS 223
+5
+4
+3
+2
+1
+0
+01 0 2 0 3 0
+Identity
+Correlated
+III-Conditioned
+Singular
+Variable #
+Eigenvalues
+40
+FIGURE 16.1 Visualization of Markowitz’s curse
+A diagonal correlation matrix has the lowest condition number. As we add correlated investments, the
+maximumeigenvalueisgreaterandtheminimumeigenvalueislower.Theconditionnumberrisesquickly,
+leadingtounstableinversecorrelationmatrices.Atsomepoint,thebenefitsofdiversificationaremorethan
+offset by estimation errors.
+toestimateacovariancematrixofsize Nthatisnotsingular.Forexample,estimating
+an invertible covariance matrix of size 50 requires, at the very least, 5 years of daily
+IIDdata.Asmostinvestorsknow,correlationstructuresdonotremaininvariantover
+suchlongperiodsbyanyreasonableconfidencelevel.Theseverityofthesechallenges
+is epitomized by the fact that even na¨ıve (equally-weighted) portfolios have been
+showntobeatmean-varianceandrisk-basedoptimizationout-of-sample(DeMiguel
+et al. [2009]).
+16.4 FROM GEOMETRIC TO HIERARCHICAL RELA TIONSHIPS
+These instability concerns have received substantial attention in recent years, as
+Kolm et al. [2014] have carefully documented. Most alternatives attempt to achieve
+robustness by incorporating additional constraints (Clarkeet al.[2002]),introducing
+Bayesian priors (Black and Litterman [1992]), or improving the numerical stability
+of the covariance matrix’s inverse (Ledoit and Wolf [2003]).
+All the methods discussed so far, although published in recent years, are derived
+from(very)classicalareasofmathematics:geometry,linearalgebra,andcalculus.A
+correlation matrix is a linear algebra object that measures the cosines of the angles
+
+--- PAGE 4 ---
+224 MACHINE LEARNING ASSET ALLOCATION
+between any two vectors inthe vector space formed by the returns series (seeCalkin
+andL ´opezdePrado[2014a,2015b]).Onereasonfortheinstabilityofquadraticopti-
+mizers is that the vector space is modelled as a complete (fully connected) graph,
+where every node is a potential candidate to substitute another. In algorithmic terms,
+inverting the matrix means evaluating the partial correlations across the complete
+graph. Figure 16.2(a) visualizes the relationships implied by a covariance matrix of
+50 × 50, that is 50 nodes and 1225 edges. This complex structure magnifies small
+estimation errors, leading to incorrect solutions. Intuitively, it would be desirable to
+drop unnecessary edges.
+Letusconsiderforamomentthepracticalimplicationsofsuchatopologicalstruc-
+ture. Suppose that an investor wishes to build a diversified portfolio of securities,
+including hundreds of stocks, bonds, hedge funds, real estate, private placements,
+etc. Some investments seem closer substitutes of one another, and other investments
+seem complementary to one another. For example, stocks could be grouped in terms
+of liquidity, size, industry, and region, where stocks within a given group compete
+for allocations. In deciding the allocation to a large publicly traded U.S. financial
+stocklikeJ.P.Morgan,wewillconsideraddingorreducingtheallocationtoanother
+large publicly traded U.S. bank like Goldman Sachs, rather than a small community
+bank in Switzerland, or a real estate holding in the Caribbean. Yet, to a correlation
+matrix,allinvestmentsarepotentialsubstitutestooneanother.Inotherwords,corre-
+lationmatriceslackthenotionof hierarchy.Thislackofhierarchicalstructureallows
+weightstovaryfreelyinunintendedways,whichisarootcauseofCLA’sinstability.
+Figure 16.2(b) visualizes a hierarchical structure known as a tree. A tree structure
+introduces two desirable features: (1) It has onlyN −1 edges to connectN nodes,
+so the weights only rebalance among peers at various hierarchi
+
+--- PAGE 5 ---
+FROM GEOMETRIC TO HIERARCHICAL RELATIONSHIPS 225
+10
+9
+8
+7
+6
+5
+4
+3
+2
+1
+0
+49
+48
+47
+46
+45
+44
+43
+42
+41
+40
+39383736
+35
+34
+33
+32
+31
+30
+29
+28
+27
+26
+25
+24
+23
+22
+21
+20
+19
+18
+17
+16
+15 14 13 12 11
+(a)
+(b)
+13
+18
+14
+15
+4
+5
+17
+31
+10
+33
+32
+38
+37
+39
+36
+35 34
+11
+12 3
+16 1
+0
+6
+21
+20
+19
+2
+7
+23 22
+24
+8
+9
+28
+29
+30
+26
+2527
+FIGURE 16.2 The complete-graph (top) and the tree-graph (bottom) structures
+Correlation matrices can be represented as complete graphs, which lack the notion of hierarchy: Each
+investment is substitutable with another. In contrast, tree structures incorporate hierarchical relationships.
+

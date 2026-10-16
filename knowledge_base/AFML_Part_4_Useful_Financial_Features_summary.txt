@@ -1,0 +1,141 @@
+=== AFML_Part_4_Useful_Financial_Features.pdf (54 pages) ===
+
+--- PAGE 1 ---
+PART 4
+Useful Financial Features
+Chapter 17: Structural Breaks, 249
+Chapter 18: Entropy Features, 263
+Chapter 19: Microstructural Features, 281
+247
+
+--- PAGE 2 ---
+
+
+--- PAGE 3 ---
+CHAPTER 17
+Structural Breaks
+17.1 MOTIV A TION
+In developing an ML-based investment strategy, we typically wish to bet when there
+is a confluence of factors whose predicted outcome offers a favorable risk-adjusted
+return. Structural breaks, like the transition from one market regime to another, is
+one example of such a confluence that is of particular interest. For instance, a mean-
+revertingpatternmaygivewaytoamomentumpattern.Asthistransitiontakesplace,
+most market participants are caught off guard, and they will make costly mistakes.
+This sort of errors is the basis for many profitable strategies, because the actors on
+thelosingsidewilltypicallybecomeawareoftheirmistakeonceitistoolate.Before
+they accept their losses, they will act irrationally, try to hold the position, and hope
+for a comeback. Sometimes they will even increase alosing position, indesperation.
+Eventuallytheywillbeforcedtostoplossorstopout.Structuralbreaksoffersomeof
+the best risk/rewards. In this chapter, we will review some methods that measure the
+likelihood of structural breaks, so that informative features can be built upon them.
+17.2 TYPES OF STRUCTURAL BREAK TESTS
+We can classify structural break tests in two general categories:
+r CUSUM tests: These test whether the cumulative forecasting errors signifi-
+cantly deviate from white noise.
+r Explosiveness tests:Beyonddeviationfromwhitenoise,thesetestwhetherthe
+process exhibits exponential growth or collapse, as this is inconsistent with a
+random walk or stationary process, and it is unsustainable in the long run.
+249
+
+--- PAGE 4 ---
+250 STRUCTURAL BREAKS
+◦ Right-tail unit-root tests: These tests evaluate the presence of exponential
+growth or collapse, while assuming an autoregressive specification.
+◦ Sub/super-martingale tests: These tests evaluate the presence of exponen-
+tial growth or collapse under a variety of functional forms.
+17.3 CUSUM TESTS
+In Chapter 2 we introduced the CUSUM filter, which we applied in the context of
+event-basedsamplingofbars.Theideawastosampleabarwheneversomevariable,
+like cumulative prediction errors, exceeded a predefined threshold. This concept can
+be further extended to test for structural breaks.
+17.3.1 Brown-Durbin-Evans CUSUM Test on Recursive Residuals
+This test was proposed by Brown, Durbin and Evans [1975]. Let us assume that at
+every observationt = 1,…, T, we count with an array of featuresxt predictive of a
+value yt.Matrix Xt iscomposedofthetimeseriesoffeatures t ≤ T,{xi}i=1,…,t.These
+authorsproposethatwecomputerecursiveleastsquares(RLS)estimatesof 𝛽,based
+on the specification
+yt = 𝛽
+′
+t xt +𝜀t
+whichisfitonsubsamples([1, k+1],[1, k+2],…,[1, T]),giving T − kleastsquares
+estimates (̂𝛽k+1,…, ̂𝛽T). We can compute the standardized 1-step ahead recursive
+residuals as
+̂𝜔t =
+yt − ̂𝛽
+′
+t−1xt
+√
+ft
+ft = ̂𝜎2
+𝜀
+[
+1+ x
+′
+t
+(X
+′
+t Xt
+)−1
+xt
+]
+The CUSUM statistic is defined as
+St =
+t∑
+j=k+1
+̂𝜔j
+̂𝜎𝜔
+̂𝜎2
+𝜔 = 1
+T − k
+T∑
+t=k
+(̂𝜔t −E[̂𝜔t])2
+Under the null hypothesis that𝛽 is some constant value,H0 : 𝛽t = 𝛽, then St ∼
+N[0, t− k−1]. One caveat of this procedure is that the starting point is chosen arbi-
+trarily, and results may be inconsistent due to that.
+
+--- PAGE 5 ---
+EXPLOSIVENESS TESTS 251
+17.3.2 Chu-Stinchcombe-White CUSUM Test on Levels
+This test follows Homm and Breitung [2012]. It simplifies the previous method by
+dropping {xt}t=1,…,T, and assuming thatH0 : 𝛽t = 0, that is, we forecast no change
+(Et−1[Δyt] = 0).Thiswillallowustoworkdirectlywith yt levels,hencereducingthe
+computationalburden.Wecomputethestandardizeddepartureoflog-price yt relative
+to the log-price atyn, t > n,a s
+Sn,t = (yt − yn)(̂𝜎t
+√
+t− n)−1
+̂𝜎2
+t = (t−1)−1
+t∑
+i=2
+(Δyi)2
+Under the null hypothesisH0 : 𝛽t = 0, then Sn,t ∼ N[0,1]. The time-dependent
+critical value for theone-sided test is
+c𝛼[n, t] =
+√
+b𝛼 +log[t− n]
+These authors derived via Monte Carlo thatb0.05 = 4.6. One disadvantage of this
+method is that the reference levelyn is set somewhat arbitrarily. To overcome this
+pitfall, we could estimateSn,t on a series of backward-shifting windowsn ∈ [1, t],
+and pickSt =s u p
+n∈[1,t]
+{Sn,t}.
+17.4 EXPLOSIVENESS TESTS
+Explosiveness tests can be generally divided between those that test for one bubble
+andthosethattestformultiplebubbles.Inthiscontext,bubblesarenotlimitedtoprice
+rallies, but they also include sell-offs. Tests that allow for multiple bubbles are more
+robust in the sense that a cycle of bubble-burst-bubble will make the series appear to
+be stationary to single-bubble tests. Maddala and Kim [1998], and Breitung [2014]
+offer good overviews of the literature.
+17.4.1 Chow-Type Dickey-Fuller Test
+A family of explosiveness tests was inspired by the work of Gregory Chow, starting
+with Chow [1960]. Consider the first order autoregressive process
+yt = 𝜌yt−1 +𝜀t
+where 𝜀t is white noise. The null hypothesis is thatyt follows a random walk,H0:
+𝜌 = 1,andthealternativehypothesisisthat yt startsasarandomwalkbutchanges at
+time 𝜏∗T, where𝜏∗ ∈ (0,1), into an explosive process:
+H1 : yt =
+{ yt−1 +𝜀t for t = 1,…,𝜏∗T
+𝜌yt−1 +𝜀t for t = 𝜏∗T +1,…, T, with𝜌> 1
+

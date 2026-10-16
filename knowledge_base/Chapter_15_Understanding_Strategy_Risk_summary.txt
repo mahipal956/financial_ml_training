@@ -1,0 +1,213 @@
+=== Chapter_15_Understanding_Strategy_Risk.pdf (10 pages) ===
+
+--- PAGE 1 ---
+CHAPTER 15
+Understanding Strategy Risk
+15.1 MOTIV A TION
+AswesawinChapters3and13,investmentstrategiesareoftenimplementedinterms
+of positions helduntil one oftwoconditions aremet: (1)acondition toexit theposi-
+tionwithprofits(profit-taking),or(2)aconditiontoexitthepositionwithlosses(stop-
+loss). Even when a strategy does not explicitly declare a stop-loss, there is always
+an implicit stop-loss limit, at which the investor can no longer finance her position
+(margin call) or bear the pain caused by an increasing unrealized loss. Because most
+strategies have (implicitly or explicitly) these two exit conditions, it makes sense to
+modelthedistributionofoutcomesthroughabinomialprocess.Thisinturnwillhelp
+usunderstandwhatcombinationsofbettingfrequency,odds,andpayoutsareuneco-
+nomic. The goal of this chapter is to help you evaluate when a strategy is vulnerable
+to small changes in any of these variables.
+15.2 SYMMETRIC PA YOUTS
+Consider a strategy that producesn IID bets per year, where the outcomeXi of a
+bet i ∈ [1, n] is a profit𝜋> 0 with probability P[Xi = 𝜋] = p, and a loss−𝜋 with
+probability P[Xi =− 𝜋] = 1− p. You can think ofp as the precision of a binary
+classifier where a positive means betting on an opportunity, and a negative means
+passing on an opportunity: True positives are rewarded, false positives are pun-
+ished, and negatives (whether true or false) have no payout. Since the betting out-
+comes {Xi}i=1,…,n are independent, we will compute the expected moments per
+bet. The expected profit from one bet is E[Xi] = 𝜋p+(−𝜋)(1− p) = 𝜋(2p−1). The
+variance is V[Xi] = E[X2
+i ]−E[Xi]2, where E[X2
+i ] = 𝜋2p+(−𝜋)2(1− p) = 𝜋2, thus
+211
+
+--- PAGE 2 ---
+212 UNDERSTANDING STRATEGY RISK
+V[Xi] = 𝜋2 −𝜋2(2p−1)2 = 𝜋2[1−(2p−1)2] = 4𝜋2p(1− p). For n IID bets per
+year, the annualized Sharpe ratio (𝜃)i s
+𝜃[p, n] = nE[Xi]
+√
+nV[Xi]
+= 2p−1
+2
+√
+p(1− p)
+⏟⏞⏞⏞⏞⏟⏞⏞⏞⏞⏟
+t−valueof p
+underH0 : p = 1
+2
+√
+n
+Note how𝜋 cancels out of the above equation, because the payouts are symmet-
+ric. Just as in the Gaussian case,𝜃[p, n] can be understood as a re-scaled t-value.
+This illustrates the point that, even for a smallp > 1
+2, the Sharpe ratio can be made
+high for a sufficiently largen.This is the economic basis for high-frequency trading,
+where p can be barely above .5, and the key to a successful business is to increase
+n. The Sharpe ratio is a function of precision rather than accuracy, because passing
+on an opportunity (a negative) is not rewarded or punished directly (although too
+many negatives may lead to a smalln, which will depress the Sharpe ratio toward
+zero).
+Forexample,for p = .55, 2p−1
+2
+√
+p(1−p) = 0.1005,andachievinganannualizedSharpe
+ratio of 2 requires 396 bets per year. Snippet 15.1 verifies this result experimen-
+tally.Figure15.1plotstheSharperatioasafunctionofprecision,forvariousbetting
+frequencies.
+2.0 n=0
+n=25
+n=50
+n=75
+n=100
+1. 5
+1. 0
+0.5
+0.0
+–0.5
+–1 .0
+–1 .5
+–2.0
+0.400 0.425 0.450 0.475 0.500 0.525 0.550 0.575 0.600
+FIGURE 15.1 Therelationbetweenprecision(x-axis)andsharperatio(y-axis)forvariousbetfrequen-
+cies (n)
+
+--- PAGE 3 ---
+ASYMMETRIC PAYOUTS 213
+SNIPPET 15.1 TARGETING A SHARPE RATIO AS A FUNCTION OF
+THE NUMBER OF BETS
+out,p=[],.55
+for i in xrange(1000000):
+rnd=np.random.binomial(n=1,p=p)
+x=(1 if rnd==1 else -1)
+out.append(x)
+print np.mean(out),np.std(out),np.mean(out)/np.std(out)
+Solving for 0≤ p ≤ 1, we obtain−4p2 +4p− n
+𝜃2+n = 0, with solution
+p = 1
+2
+(
+1+
+√
+1− n
+𝜃2 + n
+)
+This equation makes explicit the trade-off between precision (p) and frequency
+(n) for a given Sharpe ratio (𝜃). For example, a strategy that only produces weekly
+bets( n = 52)willneedafairlyhighprecisionof p = 0.6336todeliveranannualized
+Sharpe of 2.
+15.3 ASYMMETRIC PA YOUTS
+Consider a strategy that produces n IID bets per year, where the outcome Xi
+of a bet i ∈ [1, n]i s 𝜋+ with probability P[Xi = 𝜋+] = p, and an outcome 𝜋−,
+𝜋− <𝜋 + occurs with probability P[Xi = 𝜋−] = 1− p. The expected profit from
+one bet is E[Xi] = p𝜋+ +(1− p)𝜋− = (𝜋+ −𝜋−)p+𝜋−. The variance is V[Xi] =
+E[X2
+i ]−E[Xi]2, where E[X2
+i ] = p𝜋2
++ +(1− p)𝜋2
+− = (𝜋2
++ −𝜋2
+−)p+𝜋2
+−, thus V[Xi] =
+(𝜋+ −𝜋−)2p(1− p). FornIID bets per year, the annualized Sharpe ratio (𝜃)i s
+𝜃[p, n,𝜋−,𝜋+] = nE[Xi]
+√
+nV[Xi]
+= (𝜋+ −𝜋−)p+𝜋−
+(𝜋+ −𝜋−)
+√
+p(1− p)
+√
+n
+And for 𝜋− =− 𝜋+ we can see that this equation reduces to the symmetric
+case: 𝜃[p, n,−𝜋+,𝜋+] = 2𝜋+p+𝜋+
+2𝜋+
+√
+p(1−p)
+√
+n = 2p−1
+2
+√
+p(1−p)
+√
+n = 𝜃[p, n]. For example, for
+n = 260,𝜋− =− .01,𝜋+ = .005, p = .7, we get𝜃 = 1.173.
+Finally, we can solve the previous equation for 0≤ p ≤ 1, to obtain
+p = −b+
+√
+b2 −4ac
+2a
+
+--- PAGE 4 ---
+214 UNDERSTANDING STRATEGY RISK
+where:
+r a = (n+𝜃2)(𝜋+ −𝜋−)2
+r b = [2n𝜋− −𝜃2(𝜋+ −𝜋−)] (𝜋+ −𝜋−
+)
+r c = n𝜋2
+−
+Asasidenote,Snippet15.2verifiesthesesymbolicoperationsusingSymPyLive:
+http://live.sympy.org/.
+SNIPPET 15.2 USING THE SymPy LIBRARY FOR SYMBOLIC
+OPERATIONS
+>>> from sympy import *
+>>> init_printing(use_unicode=False,wrap_line=False,no_global=True)
+>>> p,u,d=symbols('p u d')
+>>> m2=p*u**2+(1-p)*d**2
+>>> m1=p*u+(1-p)*d
+>>> v=m2-m1**2
+>>> factor(v)
+The above equation answers the following question: Given a trading rule charac-
+terized by parameters{𝜋−,𝜋+, n}, what is the precision ratep required to achieve a
+Sharpe ratio of𝜃∗? For example, forn = 260,𝜋− =− .01,𝜋+ = .005, in order to get
+𝜃 = 2 we require ap = .72. Thanks to the large number of bets, a very small change
+in p(from p = .7to p = .72)haspropelledtheSharperatiofrom 𝜃 = 1.173to 𝜃 = 2.
+Ontheotherhand,thisalsotellsusthatthestrategyisvulnerabletosmallchangesin
+p. Snippet 15.3 implements the derivation of the implied precision. Figure 15.2 dis-
+plays the implied precision as a function ofn and 𝜋−, where𝜋+ = 0.1 and𝜃∗ = 1.5.
+As 𝜋− becomes more negative for a givenn, a higherp is required to achieve𝜃∗ for
+agi v en𝜋+.As nbecomessmallerforagiven 𝜋−,ahigher pisrequiredtoachieve 𝜃∗
+for a given𝜋+.
+SNIPPET 15.3 COMPUTING THE IMPLIED PRECISION
+def binHR(sl,pt,freq,tSR):
+’’’
+Given a trading rule characterized by the parameters {sl,pt,freq},
+what's the min precision p required to achieve a Sharpe ratio tSR?
+1) Inputs
+sl: stop loss threshold
+pt: profit taking threshold
+freq: number of bets per year
+
+--- PAGE 5 ---
+ASYMMETRIC PAYOUTS 215
+FIGURE 15.2 Heat-mapoftheimpliedprecisionasafunctionof nand𝜋−,with 𝜋+ = 0.1and 𝜃∗ = 1.5
+tSR: target annual Sharpe ratio
+2) Output
+p: the min precision rate p required to achieve tSR
+’’’
+a=(freq+tSR**2)*(pt-sl)**2
+b=(2*freq*sl-tSR**2*(pt-sl))*(pt-sl)
+c=freq*sl**2
+p=(-b+(b**2–4*a*c)**.5)/(2.*a)
+return p
+Snippet15.4solves 𝜃[p, n,𝜋−,𝜋+]fortheimpliedbettingfrequency, n.Figure15.3
+plots the implied frequency as a function ofpand𝜋−, where𝜋+ = 0.1 and𝜃∗ = 1.5.
+As 𝜋− becomes more negative for a givenp, a highern is required to achieve𝜃∗ for
+agi v en𝜋+.As pbecomessmallerforagiven 𝜋−,ahigher nisrequiredtoachieve 𝜃∗
+for a given𝜋+.
+SNIPPET 15.4 COMPUTING THE IMPLIED BETTING FREQUENCY
+def binFreq(sl,pt,p,tSR):
+’’’
+Given a trading rule characterized by the parameters {sl,pt,freq},
+what's the number of bets/year needed to achieve a Sharpe ratio
+tSR with precision rate p?
+Note: Equation with radicals, check for extraneous solution.
+

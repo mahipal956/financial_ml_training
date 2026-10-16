@@ -1,0 +1,45 @@
+{
+    "version": "1.0",
+    "description": "Financial ML Model Runtime Configuration for cTrader",
+    "feature_names": [
+        "X_ATR_14",
+        "X_Target_Vol",
+        "X_Close_FFD",
+        "X_RSI_14"
+    ],
+    "num_features": 4,
+    "execution_threshold": 0.5,
+    "step_size": 0.05,
+    "feature_stats": {
+        "X_ATR_14": {
+            "mean": 0.1567211365313653,
+            "std": 0.044515548121558286,
+            "min": 0.077429,
+            "max": 0.319143
+        },
+        "X_Target_Vol": {
+            "mean": 0.0007109335793357934,
+            "std": 0.00015552809445417993,
+            "min": 0.000401,
+            "max": 0.001076
+        },
+        "X_Close_FFD": {
+            "mean": 12.363016752767528,
+            "std": 5.526398813746663,
+            "min": 10.08359,
+            "max": 76.76312
+        },
+        "X_RSI_14": {
+            "mean": 49.851918819188185,
+            "std": 14.290854340660598,
+            "min": 10.41,
+            "max": 80.06
+        }
+    },
+    "model_params": {
+        "avg_u": 1.0,
+        "cv_f1_mean": 0.39150839208309224,
+        "cv_f1_std": 0.06778083269689326,
+        "n_samples": 271
+    }
+}

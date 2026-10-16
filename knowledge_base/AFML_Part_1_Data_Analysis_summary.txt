@@ -1,0 +1,124 @@
+=== AFML_Part_1_Data_Analysis.pdf (70 pages) ===
+
+--- PAGE 1 ---
+PART 1
+Data Analysis
+Chapter 2: Financial Data Structures, 23
+Chapter 3: Labeling, 43
+Chapter 4: Sample Weights, 59
+Chapter 5: Fractionally Differentiated Features, 75
+21
+
+--- PAGE 2 ---
+
+
+--- PAGE 3 ---
+CHAPTER 2
+Financial Data Structures
+2.1 MOTIV A TION
+In this chapter we will learn how to work with unstructured financial data, and from
+thattoderiveastructureddatasetamenabletoMLalgorithms.Ingeneral,youdonot
+wanttoconsumesomeoneelse’sprocesseddataset,asthelikelyoutcomewillbethat
+you discover what someone else already knows or will figure out soon. Ideally your
+starting point is a collection of unstructured, raw data that you are going to process
+in a way that will lead to informative features.
+2.2 ESSENTIAL TYPES OF FINANCIAL DATA
+Financial data comes in many shapes and forms. Table 2.1 shows the four essential
+typesoffinancialdata,orderedfromlefttorightintermsofincreasingdiversity.Next,
+we will discuss their different natures and applications.
+2.2.1 Fundamental Data
+Fundamental data encompasses information that can be found in regulatory filings
+and business analytics. It is mostly accounting data, reported quarterly. A particular
+aspect of this data is that it is reported with a lapse. You must confirm exactly when
+each data point was released, so that your analysis uses that information only after
+it was publicly available. A common beginner’s error is to assume that this data was
+published at the end of the reporting period. That is never the case.
+Forexample,fundamentaldatapublishedbyBloombergisindexedbythelastdate
+includedinthereport,whichprecedesthedateoftherelease(oftenby1.5months).In
+otherwords,Bloombergisassigningthosevaluestoadatewhentheywerenotknown.
+You could not believe how many papers are published every year using misaligned
+23
+
+--- PAGE 4 ---
+24 FINANCIAL DATA STRUCTURES
+TABLE 2.1 The Four Essential Types of Financial Data
+Fundamental Data Market Data Analytics Alternative Data
+r Assets
+r Liabilities
+r Sales
+r Costs/earnings
+r Macro variables
+r ...
+r Price/yield/implied
+volatility
+r Volume
+r Dividend/coupons
+r Open interest
+r Quotes/cancellations
+r Aggressor side
+r ...
+rAnalyst
+recommendations
+rCredit ratings
+rEarnings
+expectations
+rNews sentiment
+r...
+r Satellite/CCTV
+images
+r Google searches
+r Twitter/chats
+r Metadata
+r ...
+fundamentaldata,especiallyinthefactor-investingliterature.Onceyoualignthedata
+correctly, a substantial number of findings in those papers cannot be reproduced.
+A second aspect of fundamental data is that it is often backfilled or reinstated.
+“Backfilling” means that missing data is assigned a value, even if those values were
+unknownatthattime.A“reinstatedvalue”isacorrectedvaluethatamendsanincor-
+rect initial release. A company may issue multiple corrections for a past quarter’s
+resultslongafterthefirstpublication,anddatavendorsmayoverwritetheinitialval-
+ues with their corrections. The problem is, the corrected values were not known on
+thatfirstreleasedate.Somedatavendorscircumventthisproblembystoringmultiple
+release dates and values for each variable. For example, we typically have three val-
+ues for a single quarterly GDP release: the original released value and two monthly
+revisions.Still,itisvery common tofind studies thatusethefinal released value and
+assignittothetimeofthefirstrelease,oreventothelastdayinthereportingperiod.
+Wewillrevisitthismistake,anditsimplications,whenwediscussbacktestingerrors
+in Chapter 11.
+Fundamentaldataisextremelyregularizedandlowfrequency.Beingsoaccessible
+to the marketplace, it is rather unlikely that there is much value left to be exploited.
+Still, it may be useful in combination with other data types.
+2.2.2 Market Data
+Market data includes all trading activity that takes place in an exchange (like CME)
+ortradingvenue (likeMarketAxess). Ideally,your 
+
+--- PAGE 5 ---
+BARS 25
+One appealing aspect of FIX data is that it is not trivial to process, unlike fun-
+damental data. It is also very abundant, with over 10TB being generated on a daily
+basis. That makes it a more interesting dataset for strategy research.
+2.2.3 Analytics
+You could think of analytics as derivative data, based on an original source, which
+could be fundamental, market, alternative, or even a collection of other analytics.
+What characterizes analytics is not the content of the information, but that it is not
+readily available from an original source, and that it has been processed for you in
+a particular way. Investment banks and research firms sell valuable information that
+resultsfromin-depthanalysesofcompanies’businessmodels,activities,competition,
+outlook, etc. Some specialized firms sell statistics derived from alternative data, for
+example, the sentiment extracted from news reports and social media.
+A positive aspect of analytics is that the signal has been extracted for you from a
+raw source. The negative aspects are that analytics may be costly, the methodology
+used in their production may be biased or opaque, and you will not be the sole
+consumer.
+2.2.4 Alternative Data
+KolanovicandKrishnamachari[2017]differentiateamongalternativedataproduced
+by individuals (social media, news, web searches, etc.), business processes (transac-
+tions,corporatedata,governmentagencies,etc.),andsensors(satellites,geolocation,
+weather,CCTV,etc.).Somepopularsatelliteimageorvideofeedsincludemonitoring
+of tankers, tunnel traffic activity, or parking lot occupancies.
+What truly characterizes alternative data is that it is primary information, that is,
+information that has not made it to the other sources. Before Exxon Mobile reported
+increased earnings, before its market price shot up, before analysts wrote their com-
+mentary of their latest filings, before all of that, there were movements of tankers
+and drillers and pipeline traffic. They happened months before those activities 
+

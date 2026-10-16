@@ -1,0 +1,61 @@
+# Financial Machine Learning Training Configuration
+# Based on Marcos López de Prado's "Advances in Financial Machine Learning"
+
+project_name: "Financial_ML_Training_USDJPY"
+random_state: 42
+
+data:
+  features:
+    - "X_ATR_14"
+    - "X_Target_Vol"
+    - "X_Close_FFD"
+    - "X_RSI_14"
+  target_meta: "Meta_Label_Bin_y_Binary"
+  primary_side: "Primary_Model_Side"
+  timestamp_col: "Close_Time_UTC"
+  close_col: "Close"
+  lifespan_col: "Trade_Lifespan_Bars"
+  event_col: "CUSUM_Event"
+
+sample_weights:
+  compute_concurrency: true
+  use_decay: true
+  clf_last_w: 1.0  # 1.0 = no decay, <1.0 = linear decay
+
+cross_validation:
+  n_splits: 5
+  pct_embargo: 0.01  # 1% post-test embargo as per Chapter 7
+  scoring: "f1"      # F1-score for meta-labeling {0, 1}
+
+models:
+  primary_architecture: "bagged_tree_avgU"  # options: rf, bagged_tree_avgU, scalable_svm
+  random_forest:
+    n_estimators: 200
+    max_depth: 5
+    criterion: "entropy"
+    class_weight: "balanced_subsample"
+    max_features: 1  # Prevents feature masking in MDI
+  bagging:
+    n_estimators: 200
+    base_max_depth: 4
+  svm:
+    max_iter: 100000
+    tol: 0.001
+    probability: true
+
+feature_importance:
+  compute_mdi: true
+  compute_mda: true
+  compute_sfi: true
+  pca_variance_threshold: 0.95
+
+bet_sizing:
+  step_size: 0.05
+  execution_threshold: 0.5
+  num_classes: 2
+
+export:
+  export_onnx: true
+  export_json: true
+  onnx_filename: "model.onnx"
+  json_filename: "model_config.json"

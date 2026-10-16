@@ -1,0 +1,102 @@
+=== AFML_Chapter_2_Master_Notes.pdf (3 pages) ===
+
+--- PAGE 1 ---
+AFML Chapter 2: Master Notes & Mind
+Map
+Financial Data Structures | Advances in Financial Machine Learning (Marcos López de Prado)
+Core Mission of Chapter 2: Machine learning models depend fundamentally on the quality of their inputs. Financial
+data is naturally unstructured, non-stationary, and full of noise. Chapter 2 is dedicated exclusively to transforming
+raw trade/tick chaos into a structured, stationary, and noise-filtered Features Matrix X.
+1. Essential Types of Financial Data (Sections 2.1 & 2.2)
+Before constructing bars, a quantitative researcher must identify the origin and characteristics of the input feed:
+Data Type
+Description & Characteristics
+Limitations & Hazards
+Fundamental Data
+Quarterly/Annual accounting filings (Balance Sheet, P&L, 10-K, 10-Q). Low frequency.
+Severely delayed, backfilled, and regularly restated by companies. Look-ahead risk.
+Market Data (L1/L2/L3)
+All trading activity at the exchange. L1 (BBO), L2 (Order book depth), L3 (Individual order queues).
+Massive volume, high microstructure noise, cancellations, and order spoofing.
+Analytics
+Derivative quantities: implied volatility surfaces, sentiment scores, analyst revisions.
+Proprietary black-box calculations; methodology can change unexpectedly.
+Alternative Data
+Non-market exhaust: satellite imagery, credit card transactions, shipping AIS data.
+Very high cost, sparse history, privacy concerns, and severe survivorship biases.
+2. Standard Bars (Section 2.3.1)
+Trading occurs when information arrives, not when the physical clock ticks. Standard bars group raw transaction data:
+Bar Type
+Sampling Rule
+Statistical Properties & AFML Verdict
+Time Bars (1m, 5m)
+Sampled every fixed time interval T (seconds/minutes).
+<b>Flawed:</b> High heteroscedasticity, multi-modal variance, and strong autocorrelation.
+Tick Bars (T500, T1000)
+Sampled every fixed number of transactions N (Mandelbrot & Taylor 1967).
+<b>Good Proxy:</b> Synchronizes with market activity speed. Ideal for Forex without volume.
+Vol
+
+--- PAGE 2 ---
+The Two Families of Information Bars:
+ 1. Imbalance Bars (TIB, VIB, DIB): Sampled when cumulative signed order flow departures exceed expectation. Theta_T =
+ Sum(b_t * v_t). Trigger condition: |Theta_T| >= E_0[T] * |2*P[b_t=1] - 1|.
+2. Runs Bars (TRB, VRB, DRB): Sampled when unbroken runs of one-sided volume exceed expectation. Captures aggressive
+ institutional sweeps across the order book.
+4. Multi-Product Series & The ETF Trick (Section 2.4)
+Futures contracts expire periodically, causing artificial price gaps on roll dates. The ETF Trick synthesizes a continuous,
+unleveraged, reinvested index tracking a basket of instruments without artificial price drift.
+Properties of the ETF Trick:
+ • Avoids negative prices produced by traditional backward difference stitching.
+ • Correctly accounts for contract multipliers, financing costs, and roll transaction friction.
+ • Handles multi-asset spreads (e.g., S&P; 500 / Eurostoxx 50) using PCA eigen-weights.
+ 
+5. Feature Downsampling & The CUSUM Filter (Section 2.5)
+A structured dataset of millions of bars contains mostly random noise. The Symmetric CUSUM Filter is a
+quality-control mechanism designed to capture only significant shifts in the return process (catalytic events).
+Symmetric CUSUM Filter Equations:
+   Upside Accumulator:   S+_t = max(0, S+_{t-1} + y_t - E_{t-1}[y_t]),   S+_0 = 0
+   Downside Accumulator: S-_t = min(0, S-_{t-1} + y_t - E_{t-1}[y_t]),   S-_0 = 0
+   Event Trigger Condition:   S_t = max(S+_t, -S-_t) >= h
+   Directional Reset: When S+_t >= h, record event and reset S+_t = 0 (same for S-_t).
+Why CUSUM Outperforms Bollinger Bands:
+ When price hovers around a Bollinger band, it produces dozens of repeated false breakout alarms. The CUSUM filter resets
+ to zero immediately upon breach, requiring a completely fresh move of size h to trigger again.
+6. Mind Map: Chapter 2 End-to-End Pipeline
+ DATA EXTRACTION & STRUCTURING PIPELINE (BUILDING MATRIX X):
+  [Raw Streaming Quotes: Ticks, L1/L2 Book, News]
+      
+
+--- PAGE 3 ---
+7. Chapter 2 Exercises Key Takeaways
+Exercise
+Core Question
+Takeaway & Conclusion
+Ex 2.1
+Tick vs Volume vs Dollar bars statistical comparison
+Dollar bars win: lowest serial correlation, smallest variance of variances, closest to Normal IID.
+Ex 2.2
+Dollar bars vs Dollar Imbalance Bars (DIB)
+DIB exhibits higher serial correlation because it concentrates on one-sided institutional order flow.
+Ex 2.3
+S&P 500 / Eurostoxx 50 spread via ETF Trick
+PCA weights construct a stationary, cointegrated portfolio spread confirmed via ADF test (p < 0.05).
+Ex 2.4
+Bollinger bands vs CUSUM filter (h = 0.05)
+CUSUM is vastly less heteroscedastic; zero-floor reset eliminates false repetitive hovering triggers.
+Ex 2.5
+CUSUM on returns vs absolute returns |y_t|
+Absolute return sampling captures pure volatility expansions, delivering the most homoscedastic sample.
+8. Intuitive Conceptual Anchors (Telugu + English Key Takeaways)
+1. Time Bars are Arbitrary: మార్కెట్ గడియారం ప్రకారం నడవదు, ఇన్ఫర్మేషన్ మరియు లావాదేవీల ప్రకారం నడుస్తుంది.
+Always prefer Tick/Dollar bars over standard Time candles.
+2. Information-Driven Synchronization: మార్కెట్లో ఇన్ఫర్మేషన్ వచ్చినప్పుడు (Institutional volume imbalance) మాత్రమే
+బార్స్ ఫామ్ అవ్వాలి.
+3. CUSUM Filter as Smart Downsampling: ప్రశాంతంగా ఉన్న సమయాల్లో మార్కెట్ డేటాని స్కిప్ చేసి, కేవలం బలమైన
+మూవ్మెంట్ వచ్చినప్పుడు మాత్రమే ML కోసం శాంపిల్ చేయాలి.
+4. Chapter 2 Output: This chapter constructs ONLY the feature matrix X. Targets (labels y) are designed in Chapter 3.
+AFML Study Notes | Chapter 2: Financial Data Structures
+Page 3 of 3
+Marcos López de Prado - Advances in Financial Machine Learning
+
+

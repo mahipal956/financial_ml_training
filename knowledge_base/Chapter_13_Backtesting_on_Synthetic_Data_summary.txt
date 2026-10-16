@@ -1,0 +1,288 @@
+=== Chapter_13_Backtesting_on_Synthetic_Data.pdf (26 pages) ===
+
+--- PAGE 1 ---
+CHAPTER 13
+Backtesting on Synthetic Data
+13.1 MOTIVATION
+In this chapter we will study an alternative backtesting method, which uses his-
+tory to generate a synthetic dataset with statistical characteristics estimated from the
+observed data. This will allow us to backtest a strategy on a large number of unseen,
+synthetic testing sets, hence reducing the likelihood that the strategy has been fit to
+a particular set of datapoints.1 This is a very extensive subject, and in order to reach
+some depth we will focus on the backtesting of trading rules.
+13.2 TRADING RULES
+Investment strategies can be defined as algorithms that postulate the existence of a
+market inefficiency. Some strategies rely on econometric models to predict prices,
+using macroeconomic variables such as GDP or inflation; other strategies use fun-
+damental and accounting information to price securities, or search for arbitrage-like
+opportunities in the pricing of derivatives products, etc. For instance, suppose that
+financial intermediaries tend to sell off-the-run bonds two days before U.S. Treasury
+auctions, in order to raise the cash needed for buying the new “paper.” One could
+monetize on that knowledge by selling off-the-run bonds three days before auctions.
+But how? Each investment strategy requires an implementation tactic, often referred
+to as “trading rules.”
+There are dozens of hedge fund styles, each running dozens of unique investment
+strategies.Whilestrategiescanbeveryheterogeneousinnature,tacticsarerelatively
+homogeneous. Trading rules provide the algorithm that must be followed to enter
+andexitaposition.Forexample,apositionwillbeenteredwhenthestrategy’ssignal
+1 I would like to thank Professor Peter Carr (New York University) for his contributions to this chapter.
+169
+
+--- PAGE 2 ---
+170 BACKTESTING ON SYNTHETIC DATA
+reaches a certain value. Conditions for exiting a position are often defined through
+thresholdsforprofit-takingandstop-losses.Theseentryandexitrulesrelyonparam-
+eters that are usually calibrated via historical simulations. This practice leads to the
+problemof backtestoverfitting,becausetheseparameterstargetspecificobservations
+in-sample, to the point that the investment strategy is so attached to the past that it
+becomes unfit for the future.
+An important clarification is that we are interested in the exit corridor conditions
+thatmaximizeperformance.Inotherwords,thepositionalreadyexists,andtheques-
+tion is how to exit it optimally. This is the dilemma often faced by execution traders,
+and it should not be mistaken with the determination of entry and exit thresholds
+for investing in a security. For a study of that alternative question, see, for example,
+Bertram [2009].
+Baileyetal.[2014,2017]discusstheproblemofbacktestoverfitting,andprovide
+methods to determine to what extent a simulated performance may be inflated due
+to overfitting. While assessing the probability of backtest overfitting is a useful tool
+to discard superfluous investment strategies, it would be better to avoid the risk of
+overfitting, atleastinthecontext ofcalibratingatradingrule.Intheorythiscouldbe
+accomplished by deriving the optimal parameters for the trading rule directly from
+the stochastic process that generates the data, rather than engaging in historical sim-
+ulations.Thisistheapproachwetakeinthischapter.Usingtheentirehistoricalsam-
+ple, we will characterize the stochastic process that generates the observed stream
+of returns, and derive the optimal values for the trading rule’s parameters without
+requiring a historical simulation.
+13.3 THE PROBLEM
+Suppose an investment strategySinvests ini = 1,…I opportunities or bets. At each
+opportunityi,Stakes a position ofmi units of securityX, wheremi ∈ (−∞,∞).T h e
+transaction that entered such opportunity was priced 
+
+--- PAGE 3 ---
+THE PROBLEM 171
+be exited atTi, its final profit/loss is𝜋i,Ti. At the onset of each opportunity, the goal
+is to realize an expected profit E0[𝜋i,Ti] =mi(E0[Pi,Ti]−Pi,0), where E0[Pi,Ti]i st h e
+forecasted price andPi,0 is the entry level of opportunityi.
+Definition 1: Trading Rule:A trading rule for strategyS is defined by the set of
+parametersR :={ 𝜋, ̄𝜋}.
+One way to calibrate (by brute force) the trading rule is to:
+1. Define a set of alternative values ofR, Ω := {R}.
+2. Simulate historically (backtest) the performance ofS under alternative values
+ofR ∈Ω .
+3. Select the optimalR∗.
+More formally:
+R∗ =a r gm a x
+R∈Ω
+{SRR}
+SRR =
+E[𝜋i,Ti |R]
+𝜎[𝜋i,Ti |R] (13.1)
+where E[.] and 𝜎[.] are respectively the expected value and standard deviation of
+𝜋i,Ti, conditional on trading ruleR, overi = 1,…I. In other words, equation (13.1)
+maximizestheSharperatioof SonIopportunitiesoverthespaceofalternativetrading
+rules R (see Bailey and L´opez de Prado [2012] for a definition and analysis of the
+Sharpe ratio). Because we count with two variables to maximizeSRR over a sample
+of sizeI,i ti se a s yt oo v e r fi tR. A trivial overfit occurs when a pair (𝜋, ̄𝜋) targets a
+fewoutliers.Baileyetal.[2017]providearigorousdefinitionofbacktestoverfitting,
+which can be applied to our study of trading rules as follows.
+Definition 2: Overfit Trading Rule: R∗ is overfit if E
+[
+E
+[
+𝜋j,Tj
+|||R∗
+]
+𝜎
+[
+𝜋j,Tj
+|||R∗
+]
+]
+<
+MeΩ
+[
+E
+[
+E
+[
+𝜋j,Tj
+|||R
+]
+𝜎
+[
+𝜋j,Tj
+|||R
+]
+]]
+, wherej =I +1,…J and MeΩ [.]is the median.
+Intuitively, an optimal in-sample (IS,i ∈ [1,I]) trading ruleR∗ is overfit when it
+is expected to underperform the median of alternative trading rulesR ∈Ω out-of-
+sample(OOS, j ∈ [I +1,J]).Thisisessentiallythesamedefinitionweusedinchap-
+ter11toderivePBO.Baileyetal.[2014]arguethatitishardnottooverfitabacktest,
+particularly when there are free variables able to target specific observations IS, or
+the number of elements inΩ is large. A trading rule introduces such free variables,
+
+--- PAGE 4 ---
+172 BACKTESTING ON SYNTHETIC DATA
+becauseR∗ canbedeterminedindependentlyfrom S.Theoutcomeisthatthebacktest
+profits from random noise IS, makingR∗ unfit for OOS opportunities. Those same
+authorsshowthatoverfittingleadstonegativeperformanceOOSwhen Δ𝜋i,t exhibits
+serial dependence. While PBO provides a useful method to evaluate to what extent
+a backtest has been overfit, it would be convenient to avoid this problem in the first
+place.2 To that aim we dedicate the following section.
+13.4 OUR FRAMEWORK
+Until now we have not characterized the stochastic process from which observations
+𝜋i,t are drawn. We are interested in finding an optimal trading rule (OTR) for those
+scenarioswhereoverfittingwouldbemostdamaging,suchaswhen 𝜋i,t exhibitsserial
+correlation. In particular, suppose a discrete Ornstein-Uhlenbeck (O-U) process on
+prices
+Pi,t = (1−𝜑)E0[Pi,Ti]+𝜑Pi,t−1 +𝜎𝜀i,t (13.2)
+such that the random shocks are IID distributed𝜀i,t ∼N(0,1). The seed value for
+this process isPi,0, the level targeted by opportunityi is E0[Pi,Ti], and𝜑 determines
+the speed at whichPi,0 converges towards E0[Pi,Ti]. Because𝜋i,t =mi(Pi,t −Pi,0),
+equation (13.2) implies that the performance of opportunityi is characterized by the
+process
+1
+mi
+𝜋i,t = (1−𝜑)E0[Pi,Ti]−Pi,0 +𝜑Pi,t−1 +𝜎𝜀i,t (13.3)
+From the proof to Proposition 4 in Bailey and L´opez de Prado [2013], it can be
+shown that the distribution of the process specified in equation (13.2) is Gaussian
+with parameters
+𝜋i,t ∼N
+[
+mi
+(
+(1−𝜑)E0[Pi,Ti]
+t−1∑
+j=0
+𝜑j −Pi,0
+)
+,m2
+i 𝜎2
+t−1∑
+j=0
+𝜑2j
+]
+(13.4)
+andanecessaryandsufficientconditionforitsstationarityisthat 𝜑 ∈ (−1,1).Givena
+set of input parameters{𝜎,𝜑} and initial conditions{Pi,0,E0[Pi,Ti]} associated with
+opportunity i, is there an OTRR∗ := (𝜋, ̄𝜋)? Similarly, should strategyS predict a
+profittarget ̄𝜋,canwecomputetheoptimalstop-loss 𝜋 giventheinputvalues {𝜎,𝜑}?
+If the answer to these questions is affirmative, no backtest would be needed in order
+todetermine R∗,thusavoidingtheproblemofoverfittingthetr
+
+--- PAGE 5 ---
+NUMERICAL DETERMINATION OF OPTIMAL TRADING RULES 173
+13.5 NUMERICAL DETERMINATION OF OPTIMAL TRADING RULES
+In the previous section we used an O-U specification to characterize the stochastic
+process generating the returns of strategyS. In this section we will present a pro-
+cedure to numerically derive the OTR for any specification in general, and the O-U
+specification in particular.
+13.5.1 The Algorithm
+The algorithm consists of five sequential steps.
+Step 1: We estimate the input parameters{𝜎,𝜑}, by linearizing equation (13.2)
+as:
+Pi,t = E0[Pi,Ti]+𝜑(Pi,t−1 −E0[Pi,Ti])+𝜉t (13.5)
+We can then form vectorsXandYby sequencing opportunities:
+X =
+⎡
+⎢
+⎢
+⎢
+⎢
+⎢
+⎢
+⎢
+⎢
+⎢⎣
+P0,0 −E0[P0,T0]
+P0,1 −E0[P0,T0]
+⋯
+P0,T−1 −E0[P0,T0]
+⋯
+PI,0 −E0[PI,TI]
+⋯
+PI,T−1 −E0[PI,TI]
+⎤
+⎥
+⎥
+⎥
+⎥
+⎥
+⎥
+⎥
+⎥
+⎥⎦
+; Y =
+⎡
+⎢
+⎢
+⎢
+⎢
+⎢
+⎢
+⎢
+⎢⎣
+P0,1
+P0,2
+⋯
+P0,T
+⋯
+PI,1
+⋯
+PI,T
+⎤
+⎥
+⎥
+⎥
+⎥
+⎥
+⎥
+⎥
+⎥⎦
+; Z =
+⎡
+⎢
+⎢
+⎢
+⎢
+⎢
+⎢
+⎢
+⎢
+⎢⎣
+E0[P0,T0]
+E0[P0,T0]
+⋯
+E0[P0,T0]
+⋯
+E0[PI,TI]
+⋯
+E0[PI,TI]
+⎤
+⎥
+⎥
+⎥
+⎥
+⎥
+⎥
+⎥
+⎥
+⎥⎦
+(13.6)
+Applying OLS on equation (13.5), we can estimate the original O-U parameters
+as,
+̂𝜑 = cov[Y,X]
+cov[X,X]
+̂𝜉t =Y −Z − ̂𝜑X (13.7)
+̂𝜎 =
+√
+cov[̂𝜉t, ̂𝜉t]
+where cov[⋅, ⋅]is the covariance operator.
+Step 2: We construct a mesh of stop-loss and profit-taking pairs, ( 𝜋, ̄𝜋).
+For example, a Cartesian product of 𝜋 ={ −1
+2𝜎,−𝜎,…,−10𝜎} and ̄𝜋 =
+{1
+2𝜎,𝜎,…,10𝜎}giveus20 ×20nodes,eachconstitutinganalternativetrading
+ruleR ∈Ω .
+

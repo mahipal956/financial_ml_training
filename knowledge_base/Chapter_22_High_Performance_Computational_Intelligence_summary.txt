@@ -1,0 +1,169 @@
+=== Chapter_22_High_Performance_Computational_Intelligence.pdf (38 pages) ===
+
+--- PAGE 1 ---
+CHAPTER 22
+High-Performance Computational
+Intelligence and Forecasting
+Technologies
+Kesheng Wu and Horst D. Simon
+22.1 MOTIV A TION
+ThischapterprovidesanintroductiontotheComputationalIntelligenceandForecast-
+ingTechnologies(CIFT)projectatLawrenceBerkeleyNationalLaboratory(LBNL).
+The main objective of CIFT is to promote the use of high-performance computing
+(HPC) tools and techniques for analysis of streaming data. After noticing the data
+volume being given as the explanation for the five-month delay for SEC and CFTC
+toissuetheirreportonthe2010FlashCrash,LBNLstartedtheCIFTprojecttoapply
+HPC technologies to manage and analyze financial data. Making timely decisions
+with streaming data is a requirement for many business applications, such as avoid-
+ing impending failure in the electric power grid or a liquidity crisis in financial mar-
+kets. In all these cases, the HPC tools are well suited in handling the complex data
+dependencies and providing a timely solution. Over the years, CIFT has worked on
+a number of different forms of streaming data, including those from vehicle traffic,
+electric power grid, electricity usage, and so on. The following sections explain the
+key features of HPC systems, introduce a few special tools used on these systems,
+and provide examples of streaming data analyses using these HPC tools.
+22.2 REGULATORY RESPONSE TO THE FLASH CRASH OF 2010
+On May 6, 2010, at about 2:45 p.m. (U.S. Eastern Daylight Time), the U.S. stock
+market experienced a nearly 10% drop in the Dow Jones Industrial Average, only to
+recover most of the loss a few minutes later. It took about five months for regulatory
+329
+
+--- PAGE 2 ---
+330 HIGH-PERFORMANCE COMPUTATIONAL INTELLIGENCE
+agencies to come up with an investigation report. In front of a congressional panel
+investigatingthecrash,thedatavolume(~20terabytes)wasgivenastheprimaryrea-
+sonforthelongdelay.SinceHPCsystems,suchasthoseatNationalEnergyResearch
+Scientific Computing (NERSC) center,1 routinely work with hundreds of terabytes
+in minutes, we should have no problem processing the data from financial markets.
+This led to the establishment of the CIFT project with the mission to apply the HPC
+techniques and tools for financial data analysis.
+Akeyaspectoffinancialbigdataisthatitconsistsofmostlytimeseries.Overthe
+years, the CIFT team, along with numerous collaborators, has developed techniques
+toanalyzemanydifferentformsofdatastreamsandtimeseries.Thischapterprovides
+a brief introduction to the HPC system including both hardware (Section 22.4) and
+software (Section 22.5), and recounts a few successful use cases (Section 22.6). We
+conclude with a summary of our vision and work so far and also provide contact
+information for interested readers.
+22.3 BACKGROUND
+Advancesincomputingtechnologyhavemadeitconsiderablyeasiertolookforcom-
+plex patterns. This pattern-finding capability is behind a number of recent scientific
+breakthroughs, such as the discovery of the Higgs particle (Aad et al. [2016]) and
+gravitational waves (Abbot et al. [2016]). This same capability is also at the core
+of many internet companies, for example, to match users with advertisers (Zeff and
+Aronson[1999],Yenetal.[2009]).However, thehardwareandsoftwareusedinsci-
+ence and in commerce are quite different. The HPC tools have some critical advan-
+tages that should be useful in a variety of business applications.
+Toolsforscientistsaretypicallybuiltaroundhigh-performancecomputing(HPC)
+platforms,whilethetoolsforcommercialapplicationsarebuiltaroundcloudcomput-
+ing platforms. For the purpose of sifting through large volumes of data to find useful
+patterns, the two approaches have been s
+
+--- PAGE 3 ---
+HPC HARDWARE 331
+designedforhighthroughput,notforproducingreal-timeresponses.However,many
+business applications require real-time or near-real-time responses. For example, an
+instability event in an electric power grid could develop and grow into a disaster in
+minutes;findingthetell-talesignaturequicklyenoughwouldavertthedisaster.Simi-
+larly,signsofemergingilliquidityeventshavebeenidentifiedinthefinancialresearch
+literature; quickly finding these signs during the active market trading hours could
+offer options to prevent shocks to the market and avoid flash crashes. The ability to
+prioritize quick turnaround time is essential in these cases.
+Adatastreamisbydefinitionavailableprogressively;therefore,theremaynotbea
+largenumberofdataobjectstobeprocessedinparallel.Typically,onlyafixedamount
+ofthemostrecentdatarecordsareavailableforanalysis.Inthiscase,aneffectiveway
+to harness the computing power of many central processing units (CPUs) cores is to
+dividetheanalyticalworkonasingledataobject(orasingletime-step)tomanyCPU
+cores. The HPC ecosystem has more advanced tools for this kind of work than the
+cloud ecosystem does.
+These are the main points that motivated our work. For a more thorough com-
+parison of HPC systems and cloud systems, we refer interested readers to Asanovic
+et al. [2006]. In particular, Fox et al. [2015] have created an extensive taxonomy for
+describing the similarities and differences for any application scenario.
+Inshort,webelievetheHPCcommunityhasalottooffertoadvancethestate-of-
+the-art for streaming analytics. The CIFT project was established with a mission to
+transfer LBNL’s HPC expertise to streaming business applications. We are pursuing
+this mission via collaboration, demonstration, and tool development.
+To evaluate the potential uses of HPC technology, we have spent time working
+withvariousapplications.ThisprocessnotonlyexposesourHPCexpertstoavariety
+of fields, but also makes it possible for us to gather financial support to establish a
+demonstra
+
+--- PAGE 4 ---
+332 HIGH-PERFORMANCE COMPUTATIONAL INTELLIGENCE
+QDR Infiniband
++ 100 Gbps to ANI
+File Servers (8) (/home) 160TB
+Gateway Nodes (16)
+ESNet
+10Gb/s
+QDR InfiniBand
+Aggregation Switch
+Router ANI
+100 Gb/s
+Mgt Nodes (12)
+Compute Servers
+504 Nodes at ANL
+720 Nodes at NErsc
+   Intel Nehalem
+   8 cores/node
+Active Storage
+Servers
+FLASH/SSD Storage
+Big Memory
+Servers
+1 TD of Memory per node
+15 at ANL / 2 at NERSC
+GPU Servers
+266 Nvidia cards at ANL
+FIGURE 22.1 Schematic of the Magellan cluster (circa 2010), an example of HPC computer cluster
+high-cost components, while cloud systems are built with standard low-cost com-
+modity components. In practice, since the worldwide investment in HPC systems
+is much smaller than that of personal computers, there is no way for manufacturers
+to produce custom components just for the HPC market. The truth is that HPC
+systems are largely assembled from commodity components just like cloud systems.
+However, due to their different target applications, there are some differences in
+their choices of the components.
+Letusdescribethecomputingelements,storagesystem,andnetworkingsystemin
+turn.Figure22.1isahigh-levelschematicdiagramrepresentingthekeycomponents
+oftheMagellanclusteraroundyear2010(Jacksonetal.[2010];Yelicketal.[2011]).
+The computer elements include both CPUs and graphics processing units (GPUs).
+TheseCPUsandGPUsarecommercialproductsinalmostallthecases.Forexample,
+thenodes ondirac1usea24-core2.2Ghz Intelprocessor, whichiscommon tocloud
+computing systems. Currently, dirac1 does not contain GPUs.
+The networking system consists of two parts: the InfiniBand network connecting
+the components within the cluster, and the switched network connection to the out-
+side world. In this particular example, the outside connections are labeled “ESNet”
+and “ANI.” The InfiniBand network switches are also common in cloud computing
+systems.
+The storage system in Figure 1 includes both rotating disks and flash storage.
+This combination is also common. What is 
+
+--- PAGE 5 ---
+HPC HARDWARE 333
+the distributed approach could use lower-capacity network because there is some
+storage that is close to each CPU. Typically, a distributed file system, such as the
+Google file system (Ghemawat, Gobioff, and Leung [2003]), is layered on top of a
+cloud computing system to make the storage accessible to all CPUs.
+Inshort,thecurrentgenerationofHPCsystemsandcloudsystemsuseprettymuch
+the same commercial hardware components. Their differences are primarily in the
+arrangement of the storage systems and networking systems. Clearly, the difference
+in the storage system designs could affect the application performance. However,
+the virtualization layer of the cloud systems is likely the bigger cause of application
+performancedifference.Inthenextsection,wewilldiscussanotherfactorthatcould
+have an even larger impact, namely software tools and libraries.
+Virtualization is generally used in the cloud computing environment to make the
+same hardware available to multiple users and to insulate one software environment
+from another. This is one of the more prominent features distinguishing the cloud
+computing environment from the HPC environment. In most cases, all three basic
+components of a computer system—CPU, storage, and networking—are all virtual-
+ized. This virtualization has many benefits. For example, an existing application can
+run on a CPU chip without recompiling; many users can share the same hardware;
+hardware faults could be corrected through the virtualization software; and appli-
+cations on a failed compute node could be more easily migrated to another node.
+However, this virtualization layer also imposes some runtime overhead and could
+reduceapplicationperformance.Fortime-sensitiveapplications,thisreductioninper-
+formance could become a critical issue.
+Testsshowthattheperformancedifferencescouldbequitelarge.Next,webriefly
+describeaperformancestudyreportedbyJacksonetal[2010].Figure22.2showsthe
+performanceslowdownusingdifferentcomputersystems.Thenames
+

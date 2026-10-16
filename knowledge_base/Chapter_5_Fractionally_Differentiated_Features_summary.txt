@@ -1,0 +1,225 @@
+=== Chapter_5_Fractionally_Differentiated_Features.pdf (16 pages) ===
+
+--- PAGE 1 ---
+CHAPTER 5
+Fractionally Differentiated Features
+5.1 MOTIV A TION
+It is known that, as a consequence of arbitrage forces, financial series exhibit low
+signal-to-noiseratios(L ´opezdePrado[2015]).Tomakemattersworse,standardsta-
+tionarity transformations, like integer differentiation, further reduce that signal by
+removingmemory.Priceserieshavememory,becauseeveryvalueisdependentupon
+alonghistoryofpreviouslevels.Incontrast,integerdifferentiatedseries,likereturns,
+have a memory cut-off, in the sense that history is disregarded entirely after a finite
+sample window. Once stationarity transformations have wiped out all memory from
+the data, statisticians resort to complex mathematical techniques to extract what-
+everresidualsignalremains.Notsurprisingly,applyingthesecomplextechniqueson
+memory-erasedserieslikelyleadstofalsediscoveries.Inthischapterweintroducea
+data transformation method that ensures the stationarity of the data while preserving
+as much memory as possible.
+5.2 THE STATIONARITY VS. MEMORY DILEMMA
+It is common in finance to find non-stationary time series. What makes these series
+non-stationary is the presence of memory, i.e., a long history of previous levels that
+shift the series’ mean over time. In order to perform inferential analyses, researchers
+need to work with invariant processes, such as returns on prices (or changes in log-
+prices), changes in yield, or changes in volatility. These data transformations make
+the series stationary, at the expense of removing all memory from the original series
+(Alexander [2001], chapter 11). Although stationarity is a necessary property for
+inferential purposes, it is rarely the case in signal processing that we wish all mem-
+ory to be erased, as that memory is the basis for the model’s predictive power. For
+example, equilibrium (stationary) models need some memory to assess how far the
+75
+
+--- PAGE 2 ---
+76 FRACTIONALLY DIFFERENTIATED FEATURES
+price process has drifted away from the long-term expected value in order to gen-
+erate a forecast. The dilemma is that returns are stationary, however memory-less,
+andpriceshavememory,howevertheyarenon-stationary.Thequestionarises:What
+is the minimum amount of differentiation that makes a price series stationary while
+preserving as much memory as possible? Accordingly, we would like to generalize
+the notion of returns to considerstationary series where not all memory is erased.
+Under this framework, returns are just one kind of (and in most cases suboptimal)
+price transformation among many other possibilities.
+Partoftheimportanceofcointegrationmethodsistheirabilitytomodelserieswith
+memory. But why would the particular case of zero differentiation deliver best out-
+comes? Zero differentiation is as arbitrary as 1-step differentiation. There is a wide
+region between these two extremes (fully differentiated series on one hand, and zero
+differentiated series on the other) that can be explored through fractional differentia-
+tion for the purpose of developing a highly predictive ML model.
+Supervised learning algorithms typically require stationary features. The reason
+is that we need to map a previously unseen (unlabeled) observation to a collection
+of labeled examples, and infer from them the label of that new observation. If the
+features are not stationary, we cannot map the new observation to a large number of
+known examples. But stationarity does not ensure predictive power. Stationarity is a
+necessary,non-sufficientconditionforthehighperformanceofanMLalgorithm.The
+problemis,thereisatrade-offbetweenstationarityandmemory.Wecanalwaysmake
+a series more stationary through differentiation, but it will be at the cost of erasing
+somememory,whichwilldefeattheforecastingpurposeoftheMLalgorithm.Inthis
+chapter, we will study one way to resolve this dilemma.
+5.3 LITERATURE REVIEW
+Virtually all the financial time series literature is based
+
+--- PAGE 3 ---
+THE METHOD 77
+the calculation of fractional differentiation in continuous stochastic processes (e.g.,
+Jensen and Nielsen [2014]).
+Differentiating the stochastic process is a computationally expensive operation.
+In this chapter we will take a practical, alternative, and novel approach to recover
+stationarity: We will generalize the difference operator to non-integer steps.
+5.4 THE METHOD
+Consider the backshift operator,B, applied to a matrix of real-valued features{Xt},
+where BkXt = Xt−k for any integer k ≥ 0. For example, (1− B)2 = 1−2B+ B2,
+where B2Xt = Xt−2, so that (1− B)2Xt = Xt −2Xt−1 + Xt−2. Note that (x+ y)n =
+∑n
+k=0
+(
+n
+k
+)
+xkyn−k = ∑n
+k=0
+(
+n
+k
+)
+xn−kyk,f o rn a positive integer. For a real number
+d,( 1+ x)d = ∑∞
+k=0
+(
+d
+k
+)
+xk, the binomial series.
+In a fractional model, the exponentd is allowed to be a real number, with the
+following formal binomial series expansion:
+(1− B)d =
+∑∞
+k=0
+(
+d
+k
+)
+(−B)k =
+∑∞
+k=0
+∏k−1
+i=0(d− i)
+k! (−B)k
+=
+∑∞
+k=0 (−B)k
+k−1∏
+i=0
+d− i
+k− i
+= 1− dB+ d(d−1)
+2! B2 − d(d−1)(d−2)
+3! B3 + ⋯
+5.4.1 Long Memory
+Let us see how a real (non-integer) positived preserves memory. This arithmetic
+series consists of a dot product
+̃Xt =
+∞∑
+k=0
+𝜔kXt−k
+with weights𝜔
+𝜔 =
+{
+1,−d, d(d−1)
+2! ,− d(d−1)(d−2)
+3! ,... ,(−1)k
+k−1∏
+i=0
+d− i
+k! ,...
+}
+and valuesX
+X = {Xt, Xt−1, Xt−2, Xt−3,... , Xt−k,... }
+
+--- PAGE 4 ---
+78 FRACTIONALLY DIFFERENTIATED FEATURES
+1 .00
+0.75
+0.50
+0.25
+0.00
+–0.25
+–0.50
+–0.75
+–1 .00
+012
+0.0
+0.25
+0.5
+0.75
+1. 0
+345
+FIGURE 5.1 𝜔k (y-axis) ask increases (x-axis). Each line is associated with a particular value ofd ∈
+[0,1], in 0.1 increments.
+When d is a positive integer number,∏k−1
+i=0
+d−i
+k! = 0,∀k > d, and memory beyond
+that point is cancelled. For example, d = 1 is used to compute returns, where∏k−1
+i=0
+d−i
+k! = 0,∀k > 1, and𝜔 ={ 1,−1,0,0, …}.
+5.4.2 Iterative Estimation
+Lookingatthesequenceofweights, 𝜔,wecanappreciatethatfor k = 0,…,∞,with
+𝜔0 = 1, the weights can be generated iteratively as:
+𝜔k =− 𝜔k−1
+d− k+1
+k
+Figure 5.1 plots the sequence of weights used to compute each value of the frac-
+tionally differentiated series. The legend reports the value ofd used to generate each
+sequence, the x-axis indicates the value ofk, and the y-axis shows the value of𝜔k.
+For example, ford = 0, all weights are 0 except for𝜔0 = 1. That is the case where
+the differentiated series coincides with the original one. Ford = 1, all weights are 0
+except for𝜔0 = 1 and𝜔1 =− 1. That is the standard first-order integer differentia-
+tion,whichisusedtoderivelog-pricereturns.Anywhereinbetweenthesetwocases,
+all weights after𝜔0 = 1 are negative and greater than−1.
+Figure 5.2 plots the sequence of weights whered ∈ [1,2], at increments of 0.1.
+For d > 1, we observe𝜔1 < −1 and𝜔k > 0, ∀k ≥ 2.
+Snippet 5.1 lists the code used to generate these plots.
+
+--- PAGE 5 ---
+THE METHOD 79
+1. 0
+1. 2 5
+1. 5
+1. 7 5
+2.0
+1. 0
+0
+0.5
+0.0
+–0.5
+–1 .0
+–1 .5
+–2.0
+1 2 3 4 5
+FIGURE 5.2 𝜔k (y-axis) ask increases (x-axis). Each line is associated with a particular value ofd ∈
+[1,2], in 0.1 increments.
+SNIPPET 5.1 WEIGHTING FUNCTION
+def getWeights(d,size):
+# thres>0 drops insignificant weights
+w=[1.]
+for k in range(1,size):
+w_=-w[-1]/k*(d-k+1)
+w.append(w_)
+w=np.array(w[::-1]).reshape(-1,1)
+return w
+#———————————————————————————————————————-
+def plotWeights(dRange,nPlots,size):
+w=pd.DataFrame()
+for d in np.linspace(dRange[0],dRange[1],nPlots):
+w_=getWeights(d,size=size)
+w_=pd.DataFrame(w_,index=range(w_.shape[0])[::-1],columns=[d])
+w=w.join(w_,how='outer')
+ax=w.plot()
+ax.legend(loc='upper left');mpl.show()
+return
+#———————————————————————————————————————-
+if __name__ =='__main__':
+plotWeights(dRange=[0,1],nPlots=11,size=6)
+plotWeights(dRange=[1,2],nPlots=11,size=6)
+

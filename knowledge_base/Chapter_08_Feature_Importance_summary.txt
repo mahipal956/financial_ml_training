@@ -1,0 +1,173 @@
+=== Chapter_08_Feature_Importance.pdf (16 pages) ===
+
+--- PAGE 1 ---
+CHAPTER 8
+Feature Importance
+8.1 MOTIV A TION
+One of the most pervasive mistakes in financial research is to take some data, run
+it through an ML algorithm, backtest the predictions, and repeat the sequence until
+a nice-looking backtest shows up. Academic journals are filled with such pseudo-
+discoveries,andevenlargehedgefundsconstantlyfallintothistrap.Itdoesnotmatter
+if the backtest is a walk-forward out-of-sample. The fact that we are repeating a test
+overandoveronthesamedatawilllikelyleadtoafalsediscovery.Thismethodolog-
+icalerrorissonotoriousamongstatisticiansthattheyconsideritscientificfraud,and
+theAmericanStatisticalAssociationwarnsagainstitinitsethicalguidelines(Amer-
+ican Statistical Association [2016], Discussion #4). It typically takes about 20 such
+iterationstodiscovera(false)investmentstrategysubjecttothestandardsignificance
+level(falsepositiverate)of5%.Inthischapterwewillexplorewhysuchanapproach
+is a waste of time and money, and how feature importance offers an alternative.
+8.2 THE IMPORTANCE OF FEATURE IMPORTANCE
+A striking facet of the financial industry is that so many very seasoned portfolio
+managers (including many with a quantitative background) do not realize how easy
+it is to overfit a backtest. How to backtest properly is not the subject of this chapter;
+we will address that extremely important topic in Chapters 11–15. The goal of this
+chapter is to explain one of the analyses that must be performedbeforeany backtest
+is carried out.
+Suppose that you are given a pair of matrices (X,y), that respectively contain
+features and labels for a particular financial instrument. We can fit a classifier on
+(X,y) and evaluate the generalization error through a purged k-fold cross-validation
+(CV), as we saw in Chapter 7. Suppose that we achieve good performance. The next
+113
+
+--- PAGE 2 ---
+114 FEATURE IMPORTANCE
+naturalquestionistotrytounderstandwhatfeaturescontributedtothatperformance.
+Maybewecouldaddsomefeaturesthatstrengthenthesignalresponsiblefortheclas-
+sifier’spredictivepower.Maybewecouldeliminatesomeofthefeaturesthatareonly
+adding noise to the system. Notably, understanding feature importance opens up the
+proverbialblackbox.Wecangaininsightintothepatternsidentifiedbytheclassifier
+if we understand what source of information is indispensable to it. This is one of the
+reasons why the black box mantra is somewhat overplayed by the ML skeptics. Yes,
+the algorithm has learned without us directing the process (that is the whole point
+of ML!) in a black box, but that does not mean that we cannot (or should not) take
+a look at what the algorithm has found. Hunters do not blindly eat everything their
+smart dogs retrieve for them, do they?
+Oncewehavefoundwhatfeaturesareimportant,wecanlearnmorebyconducting
+a number of experiments. Are these features important all the time, or only in some
+specific environments? What triggers a change in importance over time? Can those
+regime switches be predicted? Are those important features also relevant to other
+related financial instruments? Are they relevant to other asset classes? What are the
+mostrelevantfeaturesacrossallfinancialinstruments?Whatisthesubsetoffeatures
+withthehighestrankcorrelationacrosstheentireinvestmentuniverse?Thisisamuch
+better way of researching strategies than the foolish backtest cycle. Let me state this
+maxim as one of the most critical lessons I hope you learn from this book:
+SNIPPET 8.1 MARCOS’ FIRST LA W OF
+BACKTESTING—IGNORE AT YOUR OWN PERIL
+“Backtesting is not a research tool. Feature importance is.”
+—Marcos L´opez de Prado
+AdvancesinFinancialMachineLearning (2018)
+8.3 FEATURE IMPORTANCE WITH SUBSTITUTION EFFECTS
+I find it useful to distinguish between feature importance methods based on whether
+they are impacted by substitution effects. In this context, a substitution effect takes
+plac
+
+--- PAGE 3 ---
+FEATURE IMPORTANCE WITH SUBSTITUTION EFFECTS 115
+decreased. Therefore, we can derive for each decision tree how much of the overall
+impuritydecreasecanbeassignedtoeachfeature.Andgiventhatwehaveaforestof
+trees,wecanaveragethosevaluesacrossallestimatorsandrankthefeaturesaccord-
+ingly. See Louppe et al. [2013] for a detailed description. There are some important
+considerations you must keep in mind when working with MDI:
+1. Masking effects take place when some features are systematically ignored
+by tree-based classifiers in favor of others. In order to avoid them, set
+max_features=int(1)whenusingsklearn’sRFclass.Inthisway,onlyone
+random feature is considered per level.
+(a) Every feature is given a chance (at some random levels of some random
+trees) to reduce impurity.
+(b) Make sure that features with zero importance are not averaged, since the
+only reason for a 0 is that the feature was not randomly chosen. Replace
+those values withnp.nan.
+2. The procedure is obviously IS. Every feature will have some importance, even
+if they have no predictive power whatsoever.
+3. MDI cannot be generalized to other non-tree based classifiers.
+4. By construction, MDI has the nice property that feature importances add up to
+1, and every feature importance is bounded between 0 and 1.
+5. The method does not address substitution effects in the presence of correlated
+features. MDI dilutes the importance of substitute features, because of their
+interchangeability: The importance of two identical features will be halved, as
+they are randomly chosen with equal probability.
+6. Strobletal.[2007]showexperimentallythatMDIisbiasedtowardssomepre-
+dictor variables. White and Liu [1994] argue that, in case of single decision
+trees, this bias is due to an unfair advantage given by popular impurity func-
+tions toward predictors with a large number of categories.
+Sklearn’s RandomForest class implements MDI as the default feature impor-
+tance score. This choice is likely motivated by the ability to comput
+
+--- PAGE 4 ---
+116 FEATURE IMPORTANCE
+imp=pd.concat({'mean':df0.mean(),'std':df0.std()*df0.shape[0]**-.5},axis=1)
+imp/=imp['mean'].sum()
+return imp
+8.3.2 Mean Decrease Accuracy
+Mean decrease accuracy (MDA) is a slow, predictive-importance (out-of-sample,
+OOS)method.First,itfitsaclassifier;second,itderivesitsperformanceOOSaccord-
+ingtosomeperformancescore(accuracy,negativelog-loss,etc.);third,itpermutates
+each column of the features matrix (X), one column at a time, deriving the perfor-
+mance OOS after each column’s permutation. The importance of a feature is a func-
+tion of the loss in performance caused by its column’s permutation. Some relevant
+considerations include:
+1. This method can be applied to any classifier, not only tree-based classifiers.
+2. MDA is not limited to accuracy as the sole performance score. For example,
+inthecontextofmeta-labelingapplications,wemayprefertoscoreaclassifier
+withF1ratherthanaccuracy(seeChapter14,Section14.8foranexplanation).
+That is one reason a better descriptive name would have been “permutation
+importance.”Whenthescoringfunctiondoesnotcorrespondtoametricspace,
+MDA results should be used as a ranking.
+3. Like MDI, the procedure is also susceptible to substitution effects in the pres-
+ence of correlated features. Given two identical features, MDA always con-
+siders one to be redundant to the other. Unfortunately, MDA will make both
+features appear to be outright irrelevant, even if they are critical.
+4. Unlike MDI, it is possible that MDA concludes that all features are unimpor-
+tant. That is because MDA is based on OOS performance.
+5. TheCVmustbepurgedandembargoed,forthereasonsexplainedinChapter7.
+Snippet 8.3 implements MDA feature importance with sample weights, with
+purged k-fold CV, and with scoring by negative log-loss or accuracy. It measures
+MDAimportanceasafunctionoftheimprovement(frompermutatingtonotpermu-
+tating the feature), relative tothe maximum possible score (negative log-loss of 0, or
+accuracyof1).Notethat,insomecases,theimpro
+
+--- PAGE 5 ---
+FEATURE IMPORTANCE WITHOUT SUBSTITUTION EFFECTS 117
+for i,(train,test) in enumerate(cvGen.split(X =X)):
+X0,y0,w0=X.iloc[train,:],y.iloc[train],sample_weight.iloc[train]
+X1,y1,w1=X.iloc[test,:],y.iloc[test],sample_weight.iloc[test]
+ﬁt=clf.ﬁt(X=X0,y=y0,sample_weight=w0.values)
+if scoring =='neg_log_loss':
+prob=ﬁt.predict_proba(X1)
+scr0.loc[i]=-log_loss(y1,prob,sample_weight=w1.values,
+labels=clf.classes_)
+else:
+pred=ﬁt.predict(X1)
+scr0.loc[i]=accuracy_score(y1,pred,sample_weight=w1.values)
+for j in X.columns:
+X1_=X1.copy(deep=True)
+np.random.shufﬂe(X1_[j].values) # permutation of a single column
+if scoring =='neg_log_loss':
+prob=ﬁt.predict_proba(X1_)
+scr1.loc[i,j]=-log_loss(y1,prob,sample_weight=w1.values,
+labels=clf.classes_)
+else:
+pred=ﬁt.predict(X1_)
+scr1.loc[i,j]=accuracy_score(y1,pred,sample_weight=w1.values)
+imp=(-scr1).add(scr0,axis=0)
+if scoring =='neg_log_loss':imp=imp/-scr1
+else:imp=imp/(1.-scr1)
+imp=pd.concat({'mean':imp.mean(),'std':imp.std()*imp.shape[0]**-.5},axis=1)
+return imp,scr0.mean()
+8.4 FEATURE IMPORTANCE WITHOUT SUBSTITUTION EFFECTS
+Substitutioneffectscanleadustodiscardimportantfeaturesthathappentoberedun-
+dant. This is not generally a problem in the context of prediction, but it could lead
+us to wrong conclusions when we are trying to understand, improve, or simplify a
+model.Forthisreason,thefollowingsinglefeatureimportancemethodcanbeagood
+complement to MDI and MDA.
+8.4.1 Single Feature Importance
+Single feature importance (SFI) is a cross-section predictive-importance (out-of-
+sample)method.ItcomputestheOOSperformancescoreofeachfeatureinisolation.
+A few considerations:
+1. This method can be applied to any classifier, not only tree-based classifiers.
+2. SFI is not limited to accuracy as the sole performance score.
+3. UnlikeMDIandMDA,nosubstitutioneffectstakeplace,sinceonlyonefeature
+is taken into consideration at a time.
+4. Like MDA, it can conclude that all features are unimportant, because perfor-
+mance is evaluated via OOS CV.
+

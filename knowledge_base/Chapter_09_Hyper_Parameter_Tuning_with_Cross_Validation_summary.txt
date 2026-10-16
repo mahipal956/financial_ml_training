@@ -1,0 +1,213 @@
+=== Chapter_09_Hyper_Parameter_Tuning_with_Cross_Validation.pdf (10 pages) ===
+
+--- PAGE 1 ---
+CHAPTER 9
+Hyper-Parameter Tuning with
+Cross-Validation
+9.1 MOTIV A TION
+Hyper-parameter tuning is an essential step in fitting an ML algorithm. When this
+is not done properly, the algorithm is likely to overfit, and live performance will
+disappoint. The ML literature places special attention on cross-validating any tuned
+hyper-parameter. As we have seen in Chapter 7, cross-validation (CV) in finance is
+anespeciallydifficultproblem,wheresolutionsfromotherfieldsarelikelytofail.In
+this chapter we will discuss how to tune hyper-parameters using the purged k-fold
+CVmethod.Thereferencessectionlistsstudiesthatproposealternativemethodsthat
+may be useful in specific problems.
+9.2 GRID SEARCH CROSS-V ALIDATION
+Grid search cross-validation conducts an exhaustive search for the combination of
+parameters that maximizes the CV performance, according to some user-defined
+score function. When we do not know much about the underlying structure of the
+data, this is a reasonable first approach. Scikit-learn has implemented this logic in
+the function GridSearchCV, which accepts a CV generator as an argument. For
+the reasons explained in Chapter 7, we need to pass ourPurgedKFold class (Snip-
+pet 7.3) in order to prevent thatGridSearchCV overfits the ML estimator to leaked
+information.
+129
+
+--- PAGE 2 ---
+130 HYPER-PARAMETER TUNING WITH CROSS-VALIDATION
+SNIPPET 9.1 GRID SEARCH WITH PURGED K-FOLD
+CROSS-V ALIDATION
+def clfHyperFit(feat,lbl,t1,pipe_clf,param_grid,cv =3,bagging=[0,None,1.],
+n_jobs=-1,pctEmbargo=0,**ﬁt_params):
+if set(lbl.values) =={0,1}:scoring='f1' # f1 for meta-labeling
+else:scoring='neg_log_loss' # symmetric towards all cases
+#1) hyperparameter search, on train data
+inner_cv=PurgedKFold(n_splits=cv,t1=t1,pctEmbargo=pctEmbargo) # purged
+gs=GridSearchCV(estimator=pipe_clf,param_grid=param_grid,
+scoring=scoring,cv=inner_cv,n_jobs=n_jobs,iid=False)
+gs=gs.ﬁt(feat,lbl,**ﬁt_params).best_estimator_ # pipeline
+#2) fit validated model on the entirety of the data
+if bagging[1]>0:
+gs=BaggingClassiﬁer(base_estimator=MyPipeline(gs.steps),
+n_estimators=int(bagging[0]),max_samples=ﬂoat(bagging[1]),
+max_features=ﬂoat(bagging[2]),n_jobs=n_jobs)
+gs=gs.ﬁt(feat,lbl,sample_weight=ﬁt_params \
+[gs.base_estimator.steps[-1][0]+'__sample_weight'])
+gs=Pipeline([('bag',gs)])
+return gs
+Snippet 9.1 lists function clfHyperFit, which implements a purged
+GridSearchCV. The argumentﬁt_params can be used to passsample_weight,
+and param_grid contains the values that will be combined into a grid. In addition,
+this function allows for the bagging of the tuned estimator. Bagging an estimator is
+generally a good idea for the reasons explained in Chapter 6, and the above function
+incorporates logic to that purpose.
+I advise you to usescoring='f1' in the context of meta-labeling applications,
+forthefollowingreason.Supposeasamplewithaverylargenumberofnegative(i.e.,
+label ‘0’) cases. A classifier that predicts all cases to be negative will achieve high
+'accuracy' or 'neg_log_loss',eventhoughithasnotlearnedfromthefeatures
+how to discriminate between cases. In fact, such a model achieves zero recall and
+undefined precision (see Chapter 3, Section 3.7). The'f1' score corrects for that
+performance inflation by scoring the classifier in terms of precision and recall (see
+Chapter 14, Section 14.8).
+For
+
+--- PAGE 3 ---
+RANDOMIZED SEARCH CROSS-VALIDATION 131
+newclass,called MyPipeline,whichinheritsallmethodsfromsklearn’s Pipeline.
+It overwrites the inheritedﬁt method with a new one that handles the argument
+sample_weight, after which it redirects to the parent class.
+SNIPPET 9.2 AN ENHANCED PIPELINE CLASS
+class MyPipeline(Pipeline):
+def ﬁt(self,X,y,sample_weight =None,**ﬁt_params):
+if sample_weight is not None:
+ﬁt_params[self.steps[-1][0]+'__sample_weight']=sample_weight
+return super(MyPipeline,self).ﬁt(X,y,**ﬁt_params)
+If you are not familiar with this technique for expanding classes, you may want
+to read this introductory Stackoverflow post: http://stackoverflow.com/questions/
+576169/understanding-python-super-with-init-methods.
+9.3 RANDOMIZED SEARCH CROSS-V ALIDATION
+ForMLalgorithmswithalargenumberofparameters,agridsearchcross-validation
+(CV)becomescomputationallyintractable.Inthiscase,analternativewithgoodsta-
+tisticalpropertiesistosampleeachparameterfromadistribution(Begstraetal.[2011,
+2012]). This has two benefits: First, we can control for the number of combinations
+we will search for, regardless of the dimensionality of the problem (the equivalent
+to a computational budget). Second, having parameters that are relatively irrelevant
+performance-wise will not substantially increase our search time, as would be the
+case with grid search CV.
+Rather than writing a new function to work withRandomizedSearchCV, let us
+expand Snippet 9.1 to incorporate an option to this purpose. A possible implementa-
+tion is Snippet 9.3.
+SNIPPET 9.3 RANDOMIZED SEARCH WITH PURGED K-FOLD CV
+def clfHyperFit(feat,lbl,t1,pipe_clf,param_grid,cv =3,bagging=[0,None,1.],
+rndSearchIter=0,n_jobs=-1,pctEmbargo=0,**ﬁt_params):
+if set(lbl.values) =={0,1}:scoring='f1' # f1 for meta-labeling
+else:scoring='neg_log_loss' # symmetric towards all cases
+#1) hyperparameter search, on train data
+inner_cv=PurgedKFold(n_splits=cv,t1=t1,pctEmbargo=pctEmbargo) # purged
+if rndSearchIter ==0:
+gs=GridSearchCV(estimator=pipe_clf,
+
+--- PAGE 4 ---
+132 HYPER-PARAMETER TUNING WITH CROSS-VALIDATION
+gs=RandomizedSearchCV(estimator=pipe_clf,param_distributions= \
+param_grid,scoring=scoring,cv=inner_cv,n_jobs=n_jobs,
+iid=False,n_iter=rndSearchIter)
+gs=gs.ﬁt(feat,lbl,**ﬁt_params).best_estimator_ # pipeline
+#2) fit validated model on the entirety of the data
+if bagging[1]>0:
+gs=BaggingClassiﬁer(base_estimator=MyPipeline(gs.steps),
+n_estimators=int(bagging[0]),max_samples=ﬂoat(bagging[1]),
+max_features=ﬂoat(bagging[2]),n_jobs=n_jobs)
+gs=gs.ﬁt(feat,lbl,sample_weight=ﬁt_params \
+[gs.base_estimator.steps[-1][0]+'__sample_weight'])
+gs=Pipeline([('bag',gs)])
+return gs
+9.3.1 Log-Uniform Distribution
+ItiscommonforsomeMLalgorithmstoacceptnon-negativehyper-parametersonly.
+That is the case of some very popular parameters, such asC in the SVC classifier
+and gamma in the RBF kernel.1 We could draw random numbers from a uniform
+distributionboundedbetween0andsomelargevalue,say100.Thatwouldmeanthat
+99% of thevalues would beexpected tobe greater than 1. That isnot necessarily the
+most effective way of exploring the feasibility region of parameters whose functions
+donotrespondlinearly.Forexample,anSVCcanbeasresponsivetoanincreasein C
+from0.01to1astoanincreasein C from1to100. 2 Sosampling C froma U[0,100]
+(uniform)distributionwillbeinefficient.Inthoseinstances,itseemsmoreeffectiveto
+drawvaluesfromadistributionwherethelogarithmofthosedrawswillbedistributed
+uniformly. I call that a “log-uniform distribution,” and since I could not find it in the
+literature, I must define it properly.
+A random variablex follows a log-uniform distribution betweena > 0 andb > a
+if and only iflog[x]∼U [log[a],log[b]
+]. This distribution has a CDF:
+F[x] =
+⎧
+⎪
+⎨
+⎪⎩
+log[x]−log [a]
+log[b]−log [a] for a ≤ x ≤ b
+0f o r x < a
+1f o r x > b
+From this, we derive a PDF:
+f [x] =
+⎧
+⎪
+⎨
+⎪⎩
+1
+xlog [b∕a] for a ≤ x ≤ b
+0f o r x < a
+0f o r x > b
+Note that the CDF is invariant to the base of the logarithm, since
+log
+[ x
+a
+]
+log
+[ b
+a
+] =
+logc
+[ x
+a
+]
+logc
+[ b
+a
+]
+foranybase c,
+
+--- PAGE 5 ---
+RANDOMIZED SEARCH CROSS-VALIDATION 133
+1000
+800
+600
+400
+200
+0
+–5 0 0
+0
+1000
+2000
+3000
+4000
+5000
+6000
+7000
+8000
+250 500 750 10005
+FIGURE 9.1 Result from testing thelogUniform_gen class
+(and tests) inscipy.stats a random variable where[a, b] = [1E−3,1 E3], hence
+log[x]∼U [log[1E−3],log[1E3]
+].Figure9.1illustratestheuniformityofthesam-
+ples in log-scale.
+SNIPPET 9.4 THE logUniform_gen CLASS
+import numpy as np,pandas as pd,matplotlib.pyplot as mpl
+from scipy.stats import rv_continuous,kstest
+#———————————————————————————————————————
+class logUniform_gen(rv_continuous):
+# random numbers log-uniformly distributed between 1 and e
+def _cdf(self,x):
+return np.log(x/self.a)/np.log(self.b/self.a)
+def logUniform(a =1,b=np.exp(1)):return logUniform_gen(a =a,b=b,name='logUniform')
+#———————————————————————————————————————
+a,b,size=1E-3,1E3,10000
+vals=logUniform(a=a,b=b).rvs(size=size)
+print kstest(rvs =np.log(vals),cdf='uniform',args=(np.log(a),np.log(b/a)),N=size)
+print pd.Series(vals).describe()
+mpl.subplot(121)
+pd.Series(np.log(vals)).hist()
+mpl.subplot(122)
+pd.Series(vals).hist()
+mpl.show()
+

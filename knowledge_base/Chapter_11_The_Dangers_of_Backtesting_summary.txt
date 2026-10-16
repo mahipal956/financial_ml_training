@@ -1,0 +1,153 @@
+=== Chapter_11_The_Dangers_of_Backtesting.pdf (10 pages) ===
+
+--- PAGE 1 ---
+CHAPTER 11
+The Dangers of Backtesting
+11.1 MOTIV A TION
+Backtesting is one of the most essential, and yet least understood, techniques in the
+quant arsenal. A common misunderstanding is to think of backtesting as a research
+tool.Researchingandbacktestingislikedrinkinganddriving.Donotresearchunder
+the influence of a backtest. Most backtests published in journals are flawed, as the
+result of selection bias on multiple tests (Bailey, Borwein, L´opez de Prado, and Zhu
+[2014]; Harvey et al. [2016]). A full book could be written listing all the different
+errors people make while backtesting. I may be the academic author with the largest
+number of journal articles on backtesting1 and investment performance metrics, and
+still I do not feel I would have the stamina to compile all the different errors I have
+seen over the past 20 years. This chapter is not a crash course on backtesting, but a
+short list of some of the common errors that even seasoned professionals make.
+11.2 MISSION IMPOSSIBLE: THE FLA WLESS BACKTEST
+Initsnarrowestdefinition,abacktestisahistoricalsimulationofhowastrategywould
+have performed should it have been run over a past period of time. As such, it is a
+hypothetical, and by no means an experiment. At a physics laboratory, like Berkeley
+Lab, we can repeat an experiment while controlling for environmental variables, in
+order to deduce a precise cause-effect relationship. In contrast, a backtest isnot an
+experiment, and it does not prove anything. A backtest guarantees nothing, not even
+achievingthatSharperatioifwecouldtravelbackintimeinourretrofittedDeLorean
+DMC-12 (Bailey and L´opez de Prado [2012]). Random draws would have been dif-
+ferent. The past would not repeat itself.
+1 http://papers.ssrn.com/sol3/cf_dev/AbsByAuth.cfm?per_id=434076;http://www.QuantResearch.org/.
+151
+
+--- PAGE 2 ---
+152 THE DANGERS OF BACKTESTING
+Whatisthepointofabacktestthen?Itisasanitycheckonanumberofvariables,
+includingbetsizing,turnover,resiliencetocosts,andbehaviorunderagivenscenario.
+A good backtest can be extremely helpful, but backtesting well is extremely hard. In
+2014ateamofquantsatDeutscheBank,ledbyYinLuo,publishedastudyunderthe
+title “Seven Sins of Quantitative Investing” (Luo et al. [2014]). It is a very graphic
+and accessible piece that I would advise everyone in this business to read carefully.
+In it, this team mentions the usual suspects:
+1. Survivorship bias: Usingasinvestmentuniversethecurrentone,henceignor-
+ing that some companies went bankrupt and securities were delisted along the
+way.
+2. Look-ahead bias: Using information that was not public at the moment the
+simulated decision would have been made. Be certain about the timestamp for
+eachdatapoint.Takeintoaccountreleasedates,distributiondelays,andbackfill
+corrections.
+3. Storytelling: Making up a storyex-postto justify some random pattern.
+4. Data mining and data snooping: Training the model on the testing
+set.
+5. Transaction costs: Simulating transaction costs is hard because the only way
+to be certain about that cost would have been to interact with the trading book
+(i.e., to do the actual trade).
+6. Outliers: Basingastrategyonafewextremeoutcomesthatmayneverhappen
+again as observed in the past.
+7. Shorting: Taking a short position on cash products requires finding a lender.
+The cost of lending and the amount available is generally unknown, and
+depends on relations, inventory, relative demand, etc.
+Thesearejustafewbasicerrorsthatmostpaperspublishedinjournalsmakerou-
+tinely. Other common errors include computing performance using a non-standard
+method (Chapter 14); ignoring hidden risks; focusing only on returns while ignor-
+ingothermetrics;confusingcorrelationwithcausation;selectinganunrepresentative
+time period; failing to expect the unexpected; ignoring the existence of stop-out lim-
+its or margin calls
+
+--- PAGE 3 ---
+A FEW GENERAL RECOMMENDATIONS 153
+costs,yourbackteststillmakesalotofmoney.Yet,thisflawlessbacktestisprobably
+wrong. Why? Because only an expert can produce a flawless backtest. Becoming
+an expert means that you have run tens of thousands of backtests over the years. In
+conclusion, this is not the first backtest you produce, so we need to account for the
+possibility that this is a false discovery, a statistical fluke that inevitably comes up
+after you run multiple tests on the same dataset.
+The maddening thing about backtesting is that, the better you become at it, the
+morelikelyfalsediscoverieswillpopup.BeginnersfallforthesevensinsofLuoetal.
+[2014] (there are more, but who’s counting?). Professionals may produce flawless
+backtests,andwillstillfallformultipletesting,selectionbias,orbacktestoverfitting
+(Bailey and L´opez de Prado [2014b]).
+11.4 BACKTESTING IS NOT A RESEARCH TOOL
+Chapter 8 discussed substitution effects, joint effects, masking, MDI, MDA, SFI,
+parallelized features, stacked features, etc. Even if some features are very important,
+it does not mean that they can be monetized through an investment strategy. Con-
+versely,thereareplentyofstrategiesthatwillappeartobeprofitableeventhoughthey
+arebasedonirrelevantfeatures.Featureimportanceisatrueresearchtool,becauseit
+helpsusunderstandthenatureofthepatternsuncoveredbytheMLalgorithm,regard-
+lessoftheirmonetization.Critically,featureimportanceisderived ex-ante,beforethe
+historical performance is simulated.
+In contrast, a backtest is not a research tool. It provides us with very little insight
+into the reason why a particular strategy would have made money. Just as a lottery
+winner may feel he has done something to deserve his luck, there is always some
+ex-post story (Luo’s sin number three). Authors claim to have found hundreds of
+“alphas” and “factors,” and there is always some convoluted explanation for them.
+Instead, what they have found are the lottery tickets that won the last game. The
+winnerhascashedout,and
+
+--- PAGE 4 ---
+154 THE DANGERS OF BACKTESTING
+monetizingrandomhistoricalpatterns.Becausethoserandompatternsareunlikelyto
+occuragaininthefuture,thestrategysodevelopedwillfail.Everybacktestedstrategy
+is overfit to some extent as a result of “selection bias”: The only backtests that most
+people share are those that portray supposedly winning investment strategies.
+How to address backtest overfitting is arguably the most fundamental question
+in quantitative finance. Why? Because if there was an easy answer to this question,
+investmentfirmswouldachievehighperformancewithcertainty,astheywouldinvest
+only in winning backtests. Journals would assess with confidence whether a strategy
+may be a false positive. Finance could become a true science in the Popperian and
+Lakatosiansense(L ´opezdePrado[2017]).Whatmakesbacktestoverfittingsohardto
+assessisthattheprobabilityoffalsepositiveschangeswitheverynewtestconducted
+on the same dataset, and that information is either unknown by the researcher or not
+sharedwithinvestorsorreferees.Whilethereisnoeasywaytoprevent overfitting, a
+number of steps can help reduce its presence.
+1. Develop models for entire asset classes or investment universes, rather than
+for specific securities (Chapter 8). Investors diversify, hence they do not make
+mistake Xonlyonsecurity Y.Ifyoufindmistake Xonlyonsecurity Y,nomatter
+how apparently profitable, it is likely a false discovery.
+2. Apply bagging (Chapter 6) as a means to both prevent overfitting and reduce
+thevarianceoftheforecastingerror.Ifbaggingdeterioratestheperformanceof
+a strategy, it was likely overfit to a small number of observations or outliers.
+3. Do not backtest until all your research is complete (Chapters 1–10).
+4. Recordeverybacktestconductedonadatasetsothattheprobabilityofbacktest
+overfitting may be estimated on the final selected result (see Bailey, Borwein,
+L´opez de Prado, and Zhu [2017a] and Chapter 14), and the Sharpe ratio may
+be properly deflated by the number of trials carried out (Bailey and L´o
+
+--- PAGE 5 ---
+STRATEGY SELECTION 155
+11.6 STRATEGY SELECTION
+In Chapter 7 we discussed how the presence of serial conditionality in labels defeats
+standardk-foldcross-validation,becausetherandomsamplingwillspatterredundant
+observations into both the training and testing sets. We must find a different (true
+out-of-sample) validation procedure: a procedure that evaluates our model on the
+observations least likely to be correlated/redundant to those used to train the model.
+See Arlot and Celisse [2010] for a survey.
+Scikit-learn has implemented a walk-forward timefolds method.2 Under this
+approach, testing moves forward (in the time direction) with the goal of preventing
+leakage. This is consistent with the way historical backtests (and trading) are done.
+However, in the presence of long-range serial dependence, testing one observation
+awayfromtheendofthetrainingsetmaynotsufficetoavoidinformationalleakage.
+We will retake this point in Chapter 12, Section 12.2.
+One disadvantage of the walk-forward method is that it can be easily overfit. The
+reason is that without random sampling, there is a single path of testing that can
+be repeated over and over until a false positive appears. Like in standard CV, some
+randomization is needed to avoid this sort of performance targeting or backtest opti-
+mization, while avoiding the leakage of examples correlated to the training set into
+the testing set. Next, we will introduce a CV method for strategy selection, based on
+the estimation of the probability of backtest overfitting (PBO). We leave for Chapter
+12 an explanation of CV methods for backtesting.
+Bailey et al. [2017a] estimate the PBO through the combinatorially symmetric
+cross-validation (CSCV) method. Schematically, this procedure works as follows.
+First, we form a matrixM by collecting the performance series from theN trials.
+In particular, each columnn = 1,…, N represents a vector of PnL (mark-to-market
+profits and losses) overt = 1,…, T observations associated with a particular model
+c
+

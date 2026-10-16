@@ -1,0 +1,186 @@
+=== Chapter_14_Backtest_Statistics.pdf (16 pages) ===
+
+--- PAGE 1 ---
+CHAPTER 14
+Backtest Statistics
+14.1 MOTIVATION
+In the previous chapters, we have studied three backtesting paradigms: First, histor-
+ical simulations (the walk-forward method, Chapters 11 and 12). Second, scenario
+simulations (CV and CPCV methods, Chapter 12). Third, simulations on synthetic
+data (Chapter 13). Regardless of the backtesting paradigm you choose, you need to
+report the results according to a series of statistics that investors will use to compare
+and judge your strategy against competitors. In this chapter we will discuss some
+of the most commonly used performance evaluation statistics. Some of these statis-
+ticsareincludedintheGlobalInvestmentPerformanceStandards(GIPS), 1 howevera
+comprehensiveanalysisofperformancerequiresmetricsspecifictotheMLstrategies
+under scrutiny.
+14.2 TYPES OF BACKTEST STATISTICS
+Backtest statistics comprise metrics used by investors to assess and compare various
+investmentstrategies.Theyshouldhelpusuncoverpotentiallyproblematicaspectsof
+thestrategy,suchassubstantialasymmetricrisksorlowcapacity.Overall,theycanbe
+categorizedintogeneralcharacteristics,performance,runs/drawdowns,implementa-
+tion shortfall, return/risk efficiency, classification scores, and attribution.
+1 For further details, visithttps://www.gipsstandards.org.
+195
+
+--- PAGE 2 ---
+196 BACKTEST STATISTICS
+14.3 GENERAL CHARACTERISTICS
+The following statistics inform us about the general characteristics of the backtest:
+r Time range:Time range specifies the start and end dates. The period used to
+testthestrategyshouldbesufficientlylongtoincludeacomprehensivenumber
+of regimes (Bailey and L´opez de Prado [2012]).
+r Average AUM:This is the average dollar value of the assets under manage-
+ment. For the purpose of computing this average, the dollar value of long and
+short positions is considered to be a positive real number.
+r Capacity:Astrategy’scapacitycanbemeasuredasthehighestAUMthatdeliv-
+ers a target risk-adjusted performance. A minimum AUM is needed to ensure
+proper bet sizing (Chapter 10) and risk diversification (Chapter 16). Beyond
+that minimum AUM, performance will decay as AUM increases, due to higher
+transaction costs and lower turnover.
+r Leverage:Leverage measures the amount of borrowing needed to achieve the
+reportedperformance.Ifleveragetakesplace,costsmustbeassignedtoit.One
+waytomeasureleverageisastheratioofaveragedollarpositionsizetoaverage
+AUM.
+r Maximum dollar position size:Maximum dollar position size informs us
+whether the strategy at times took dollar positions that greatly exceeded the
+average AUM. In general we will prefer strategies that take maximum dollar
+positions close to the average AUM, indicating that they do not rely on the
+occurrence of extreme events (possibly outliers).
+r Ratio of longs:The ratio of longs show what proportion of the bets involved
+longpositions.Inlong-short,marketneutralstrategies,ideallythisvalueisclose
+to0.5.Ifnot,thestrategymayhaveapositionbias,orthebacktestedperiodmay
+be too short and unrepresentative of future market conditions.
+r Frequency of bets:The frequency of bets is the number of bets per year in
+thebacktest.Asequenceofpositionsonthesamesideisconsideredpartofthe
+same bet. A bet ends when the position is flattened or flipped to the opposite
+side. The number of bets is always smaller than
+
+--- PAGE 3 ---
+GENERAL CHARACTERISTICS 197
+trades,ifeverytradeinvolvesflippingthepositionbetweenmaximumlongand
+maximum short.
+r Correlation to underlying:This is the correlation between strategy returns
+and the returns of the underlying investment universe. When the correlation is
+significantly positive or negative, the strategy is essentially holding or short-
+selling the investment universe, without adding much value.
+Snippet14.1listsanalgorithmthatderivesthetimestampsofflatteningorflipping
+trades from a pandas series of target positions (tPos). This gives us the number of
+bets that have taken place.
+SNIPPET 14.1 DERIVING THE TIMING OF BETS FROM A SERIES
+OF TARGET POSITIONS
+# A bet takes place between flat positions or position flips
+df0=tPos[tPos==0].index
+df1=tPos.shift(1);df1=df1[df1!=0].index
+bets=df0.intersection(df1) # flattening
+df0=tPos.iloc[1:]*tPos.iloc[:-1].values
+bets=bets.union(df0[df0<0].index).sort_values() # tPos flips
+if tPos.index[-1] not in bets:bets=bets.append(tPos.index[-1:]) # last bet
+Snippet14.2illustratestheimplementationofanalgorithmthatestimatestheaver-
+age holding period of a strategy, given a pandas series of target positions (tPos).
+SNIPPET 14.2 IMPLEMENTATION OF A HOLDING PERIOD
+ESTIMATOR
+def getHoldingPeriod(tPos):
+# Derive avg holding period (in days) using avg entry time pairing algo
+hp,tEntry=pd.DataFrame(columns=['dT','w']),0.
+pDiff,tDiff=tPos.diff(),(tPos.index-tPos.index[0])/np.timedelta64(1,'D')
+for i in xrange(1,tPos.shape[0]):
+if pDiff.iloc[i]*tPos.iloc[i-1]>=0: # increased or unchanged
+if tPos.iloc[i]!=0:
+tEntry=(tEntry*tPos.iloc[i-1]+tDiff[i]*pDiff.iloc[i])/tPos.iloc[i]
+else: # decreased
+if tPos.iloc[i]*tPos.iloc[i-1]<0: # flip
+hp.loc[tPos.index[i],['dT','w']]=(tDiff[i]-tEntry,abs(tPos.iloc[i-1]))
+tEntry=tDiff[i] # reset entry time
+else:
+hp.loc[tPos.index[i],['dT','w']]=(tDiff[i]-tEntry,abs(pDiff.iloc[i]))
+if hp['w'].sum()>0:hp=(hp['dT']*hp['w']).sum()/hp['w'].sum()
+else:hp=np.nan
+return hp
+
+--- PAGE 4 ---
+198 BACKTEST STATISTICS
+14.4 PERFORMANCE
+Performancestatisticsaredollarandreturnsnumberswithoutriskadjustments.Some
+useful performance measurements include:
+r PnL: The total amount of dollars (or the equivalent in the currency of denom-
+ination) generated over the entirety of the backtest, including liquidation costs
+from the terminal position.
+r PnL from long positions:The portion of the PnL dollars that was generated
+exclusivelybylongpositions.Thisisaninterestingvalueforassessingthebias
+of long-short, market neutral strategies.
+r Annualized rate of return:The time-weighted average annual rate of total
+return, including dividends, coupons, costs, etc.
+r Hit ratio:The fraction of bets that resulted in a positive PnL.
+r Averagereturnfromhits: Theaveragereturnfrombetsthatgeneratedaprofit.
+r Average return from misses:The average return from bets that generated a
+loss.
+14.4.1 Time-Weighted Rate of Return
+Total return is the rate of return from realized and unrealized gains and losses,
+including accrued interest, paid coupons, and dividends for the measurement
+period. GIPS rules calculate time-weighted rate of returns (TWRR), adjusted for
+external cash flows (CFA Institute [2010]). Periodic and sub-periodic returns are
+geometrically linked. For periods beginning on or after January 1, 2005, GIPS
+rules mandate calculating portfolio returns that adjust for daily-weighted external
+cash flows.
+We can compute the TWRR by determining the value of the portfolio at the time
+of each external cash flow.2 The TWRR for portfolioi between subperiods[t−1, t]
+is denotedri,t, with equations
+ri,t =
+𝜋i,t
+Ki,t
+𝜋i,t =
+J∑
+j=1
+[(ΔPj,t + Aj,t)𝜃i,j,t−1 +Δ𝜃i,j,t(Pj,t − Pj,t−1)]
+Ki,t =
+J∑
+j=1
+̃Pj,t−1𝜃i,j,t−1 +max
+{
+0,
+J∑
+j=1
+̃Pj,tΔ𝜃i,j,t
+}
+2 External cash flows are assets (cash or investments) that enter or exit a portfolio. Dividend and interest
+income payments, for example, are not considered external cash flows.
+
+--- PAGE 5 ---
+RUNS 199
+where
+r 𝜋i,t is the mark-to-market (MtM) profit or loss for portfolioiat timet.
+r Ki,t is the market value of the assets under management by portfolioi through
+subperiod t. The purpose of including the max{.} term is to fund additional
+purchases (ramp-up).
+r Aj,t istheinterestaccruedordividendpaidbyoneunitofinstrument jattime t.
+r Pj,t is the clean price of securityj at timet.
+r 𝜃i,j,t are the holdings of portfolioi on securityj at timet.
+r ̃Pj,t is the dirty price of securityjat timet.
+r Pj,t is the average transacted clean price of portfolioion securityjover subpe-
+riod t.
+r ̃Pj,t istheaveragetransacteddirtypriceofportfolio ionsecurity joversubperiod
+t.
+Cash inflows are assumed to occur at the beginning of the day, and cash outflows
+are assumed to occur at the end of the day. These sub-period returns are then linked
+geometrically as
+𝜑i,T =
+T∏
+t=1
+(1+ ri,t)
+The variable𝜑i,T can be understood as the performance of one dollar invested in
+portfolio i over its entire life,t = 1,…, T. Finally, the annualized rate of return of
+portfolio iis
+Ri = (𝜑i,T)−yi −1
+where yi is the number of years elapsed betweenri,1 and ri,T.
+14.5 RUNS
+Investment strategies rarely generate returns drawn from an IID process. In the
+absence of this property, strategy returns series exhibit frequent runs. Runs are unin-
+terrupted sequences of returns of the same sign. Consequently, runs increase down-
+side risk, which needs to be evaluated with proper metrics.
+14.5.1 Returns Concentration
+Given a time series of returns from bets,{rt}t=1,…,T, we compute two weight series,
+w− and w+:
+r+ ={ rt|rt ≥ 0}t=1,…,T
+r− ={ rt|rt < 0}t=1,…,T
+

@@ -1,0 +1,241 @@
+=== Chapter_19_Microstructural_Features.pdf (20 pages) ===
+
+--- PAGE 1 ---
+CHAPTER 19
+Microstructural Features
+19.1 MOTIV A TION
+Marketmicrostructurestudies“theprocessandoutcomesofexchangingassetsunder
+explicit trading rules” (O’Hara [1995]). Microstructural datasets include primary
+information about the auctioning process, like order cancellations, double auction
+book, queues, partial fills, aggressor side, corrections, replacements, etc. The main
+source is Financial Information eXchange (FIX) messages, which can be purchased
+from exchanges. The level of detail contained in FIX messages provides researchers
+withtheabilitytounderstandhowmarketparticipantsconcealandrevealtheirinten-
+tions. That makes microstructural data one of the most important ingredients for
+building predictive ML features.
+19.2 REVIEW OF THE LITERATURE
+The depth and complexity of market microstructure theories has evolved over time,
+as a function of the amount and variety of the data available. The first generation of
+models used solely price information. The two foundational results from those early
+daysaretradeclassificationmodels(likethetickrule)andtheRoll[1984]model.The
+secondgenerationofmodelscameaftervolumedatasetsstartedtobecomeavailable,
+and researchers shifted their attention to study the impact that volume has on prices.
+Two examples for this generation of models are Kyle [1985] and Amihud [2002].
+The third generation of models came after 1996, when Maureen O’Hara, David
+Easley, and others published their “probability of informed trading” (PIN) theory
+(Easleyetal.[1996]).Thisconstitutedamajorbreakthrough,becausePINexplained
+the bid-ask spread as the consequence of a sequential strategic decision between liq-
+uidity providers (market makers) and position takers (informed traders). Essentially,
+itillustratedthatmarketmakersweresellersoftheoptiontobeadverselyselectedby
+281
+
+--- PAGE 2 ---
+282 MICROSTRUCTURAL FEATURES
+informed traders, and the bid-ask spread is the premium they charge for that option.
+Easleyetal.[2012a,2012b]explainhowtoestimateVPIN,ahigh-frequencyestimate
+of PIN under volume-based sampling.
+These are the main theoretical frameworks used by the microstructural literature.
+O’Hara [1995] and Hasbrouck [2007] offer a good compendium of low-frequency
+microstructural models. Easley et al. [2013] present a modern treatment of high-
+frequency microstructural models.
+19.3 FIRST GENERATION: PRICE SEQUENCES
+Thefirstgenerationofmicrostructuralmodelsconcernedthemselveswithestimating
+the bid-ask spread and volatility as proxies for illiquidity. They did so with limited
+data and without imposing a strategic or sequential structure to the trading process.
+19.3.1 The Tick Rule
+Inadoubleauctionbook,quotesareplacedforsellingasecurityatvariouspricelevels
+(offers) or for buying a security at various price levels (bids). Offer prices always
+exceedbidprices,becauseotherwisetherewouldbeaninstantmatch.Atradeoccurs
+wheneverabuyermatchesanoffer,orasellermatchesabid.Everytradehasabuyer
+and a seller, but only one side initiates the trade.
+The tick rule is an algorithm used to determine a trade’s aggressor side. A buy-
+initiated trade is labeled “1”, and a sell-initiated trade is labeled “-1”, according to
+this logic:
+bt =
+⎧
+⎪
+⎨
+⎪⎩
+1i f Δpt > 0
+−1i f Δpt < 0
+bt−1 if Δpt = 0
+where pt is the price of the trade indexed byt = 1,…, T, andb0 is arbitrarily set to
+1. A number of studies have determined that the tick rule achieves high classifica-
+tion accuracy, despite its relative simplicity (Aitken and Frino [1996]). Competing
+classification methods include Lee and Ready [1991] and Easley et al. [2016].
+Transformations of the{bt} series can result in informative features. Such trans-
+formations include: (1) Kalman Filters on its future expected value, Et[bt+1]; (2)
+structural breaks on such predictions (Chapter 17), (3) entropy of the{bt} sequence
+(Chapter18);(4)t-val
+
+--- PAGE 3 ---
+FIRST GENERATION: PRICE SEQUENCES 283
+the liquidity of a security. Consider a mid-price series{mt}, where prices follow a
+Random Walk with no drift,
+mt = mt−1 + ut
+hencepricechanges Δmt = mt − mt−1 areindependentlyandidenticallydrawnfrom
+a Normal distribution
+Δmt∼N [0,𝜎2
+u
+]
+These assumptions are, of course, against all empirical observations, which sug-
+gest that financial time series have a drift, they are heteroscedastic, exhibit serial
+dependency,andtheirreturnsdistributionisnon-Normal.Butwithapropersampling
+procedure,aswesawinChapter2,theseassumptionsmaynotbetoounrealistic.The
+observed prices,{pt}, are the result of sequential trading against the bid-ask spread:
+pt = mt + btc
+where c is half the bid-ask spread, andbt ∈{ −1,1} is the aggressor side. The Roll
+model assumes that buys and sells are equally likely,P[bt = 1] = P[bt =− 1] = 1
+2,
+serially independent, E[btbt−1] = 0, and independent from the noise, E[btut] = 0.
+Given these assumptions, Roll derives the values ofc and𝜎2
+u as follows:
+𝜎2 [Δpt
+] = E
+[(Δpt
+)2]
+− (E [(Δpt
+)])2 = 2c2 +𝜎2
+u
+𝜎 [Δpt,Δpt−1
+] =− c2
+resulting in c =
+√
+max{0,−𝜎[Δpt,Δpt−1]} and 𝜎2
+u = 𝜎2[Δpt]+2𝜎[Δpt,Δpt−1]. In
+conclusion,thebid-askspreadisafunctionoftheserialcovarianceofpricechanges,
+andthetrue(unobserved)price’snoise,excludingmicrostructuralnoise,isafunction
+of the observed noise and the serial covariance of price changes.
+The reader may question the need for Roll’s model nowadays, when datasets
+include bid-ask prices at multiple book levels. One reason the Roll model is still
+in use, despite its limitations, is that it offers a relatively direct way to determine the
+effective bid-ask spread of securities that are either rarely traded, or where the pub-
+lishedquotesarenotrepresentativeofthelevelsatwhichmarketmakers’arewilling
+toprovideliquidity(e.g.,corporate,municipal,andagencybonds).UsingRoll’sesti-
+mates,wecanderiveinformativefeaturesregardingthemarket’sliquidityconditions.
+19.3.3 High-Low V olatility Estimator
+Beckers [1983] sho
+
+--- PAGE 4 ---
+284 MICROSTRUCTURAL FEATURES
+[1980]derivesthat,forcontinuouslyobservedpricesfollowingageometricBrownian
+motion,
+E
+[
+1
+T
+T∑
+t=1
+(
+log
+[ Ht
+Lt
+])2]
+= k1𝜎2
+HL
+E
+[
+1
+T
+T∑
+t=1
+(
+log
+[ Ht
+Lt
+])]
+= k2𝜎HL
+where k1 = 4log[2], k2 =
+√
+8
+𝜋, Ht is the high price for bart, andLt is the low price
+forbar t.Thenthevolatilityfeature 𝜎HL canberobustlyestimatedbasedonobserved
+high-low prices.
+19.3.4 Corwin and Schultz
+BuildingontheworkofBeckers[1983],CorwinandSchultz[2012]introduceabid-
+ask spread estimator from high and low prices. The estimator is based on two prin-
+ciples: First, high prices are almost always matched against the offer, and low prices
+are almost always matched against the bid. The ratio of high-to-low prices reflects
+fundamental volatility as well as the bid-ask spread. Second, the component of the
+high-to-lowpriceratiothatisduetovolatilityincreasesproportionatelywiththetime
+elapsed between two observations.
+CorwinandSchultzshowthatthespread,asapercentageofprice,canbeestimated
+as
+St = 2(e𝛼t −1)
+1+ e𝛼t
+where
+𝛼t =
+√
+2𝛽t −
+√
+𝛽t
+3−2
+√
+2
+−
+√
+𝛾t
+3−2
+√
+2
+𝛽t = E
+[ 1∑
+j=0
+[
+log
+( Ht−j
+Lt−j
+)]2]
+𝛾t =
+[
+log
+( Ht−1,t
+Lt−1,t
+)]2
+and Ht−1,t isthehighpriceover2bars( t−1and t),whereas Lt−1,t isthelowpriceover
+2bars( t−1and t).Because 𝛼t < 0 ⇒ St < 0,theauthorsrecommendsettingnegative
+
+--- PAGE 5 ---
+FIRST GENERATION: PRICE SEQUENCES 285
+alphas to 0 (see Corwin and Schultz [2012], p. 727). Snippet 19.1 implements this
+algorithm.The corwinSchultzfunctionreceivestwoarguments,aseriesdataframe
+withcolumns( High,Low),andanintegervalue slthatdefinesthesamplelengthused
+to estimate𝛽t.
+SNIPPET 19.1 IMPLEMENTATION OF THE CORWIN-SCHULTZ
+ALGORITHM
+def getBeta(series,sl):
+hl=series[['High','Low']].values
+hl=np.log(hl[:,0]/hl[:,1])**2
+hl=pd.Series(hl,index=series.index)
+beta=pd.stats.moments.rolling_sum(hl,window=2)
+beta=pd.stats.moments.rolling_mean(beta,window=sl)
+return beta.dropna()
+#———————————————————————————————————————-
+def getGamma(series):
+h2=pd.stats.moments.rolling_max(series['High'],window=2)
+l2=pd.stats.moments.rolling_min(series['Low'],window=2)
+gamma=np.log(h2.values/l2.values)**2
+gamma=pd.Series(gamma,index=h2.index)
+return gamma.dropna()
+#———————————————————————————————————————-
+def getAlpha(beta,gamma):
+den=3–2*2**.5
+alpha=(2**.5–1)*(beta**.5)/den
+alpha-=(gamma/den)**.5
+alpha[alpha<0]=0 # set negative alphas to 0 (see p.727 of paper)
+return alpha.dropna()
+#———————————————————————————————————————-
+def corwinSchultz(series,sl =1):
+# Note: S<0 iif alpha<0
+beta=getBeta(series,sl)
+gamma=getGamma(series)
+alpha=getAlpha(beta,gamma)
+spread=2*(np.exp(alpha)-1)/(1+np.exp(alpha))
+startTime=pd.Series(series.index[0:spread.shape[0]],index=spread.index)
+spread=pd.concat([spread,startTime],axis=1)
+spread.columns=['Spread','Start_Time'] # 1st loc used to compute beta
+return spread
+Note that volatility does not appear in the final Corwin-Schultz equations. The
+reason is that volatility has been replaced by its high/low estimator. As a byproduct
+ofthismodel,wecanderivetheBecker-ParkinsonvolatilityasshowninSnippet19.2.
+

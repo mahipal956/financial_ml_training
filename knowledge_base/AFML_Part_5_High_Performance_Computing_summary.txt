@@ -1,0 +1,124 @@
+=== AFML_Part_5_High_Performance_Computing.pdf (66 pages) ===
+
+--- PAGE 1 ---
+PART 5
+High-Performance
+Computing Recipes
+Chapter 20: Multiprocessing and V ectorization, 303
+Chapter 21: Brute Force and Quantum Computers, 319
+Chapter 22: High-Performance Computational Intelligence and Forecasting
+Technologies, 329
+301
+
+--- PAGE 2 ---
+
+
+--- PAGE 3 ---
+CHAPTER 20
+Multiprocessing and Vectorization
+20.1 MOTIV A TION
+Multiprocessing is essential to ML. ML algorithms are computationally intensive,
+and they will require an efficient use of all your CPUs, servers, and clusters. For
+this reason, most of the functions presented throughout this book were designed
+for asynchronous multiprocessing. For example, we have made frequent use of a
+mysterious function called mpPandasObj, without ever defining it. In this chap-
+ter we will explain what this function does. Furthermore, we will study in detail
+how to develop multiprocessing engines. The structure of the programs presented
+in this chapter is agnostic to the hardware architecture used to execute them,
+whether we employ the cores of a single server or cores distributed across mul-
+tiple interconnected servers (e.g., in a high-performance computing cluster or a
+cloud).
+20.2 VECTORIZATION EXAMPLE
+Vectorization, also known as array programming, is the simplest example of paral-
+lelization, whereby an operation is applied at once to the entire set of values. As a
+minimalexample,supposethatyouneedtodoabrutesearchthrougha3-dimensional
+space, with 2 nodes per dimension. The un-vectorized implementation of that Carte-
+sianproductwilllooksomethinglikeSnippet20.1.Howwouldthiscodelookifyou
+had to search through 100 dimensions, or if the number of dimensions was defined
+by the user during runtime?
+303
+
+--- PAGE 4 ---
+304 MULTIPROCESSING AND VECTORIZATION
+SNIPPET 20.1 UN-VECTORIZED CARTESIAN PRODUCT
+# Cartesian product of dictionary of lists
+dict0={'a':['1','2'],'b':['+','*'],'c':['!','@']}
+for a in dict0['a']:
+for b in dict0['b']:
+for c in dict0['c']:
+print {'a':a,'b':b,'c':c}
+A vectorized solution would replace all explicit iterators (e.g.,For. . .loops )
+with matrix algebra operations or compiled iterators or generators. Snippet 20.2
+implements the vectorized version of Snippet 20.1. The vectorized version is prefer-
+able for four reasons: (1) slow nestedFor. . .loops are replaced with fast itera-
+tors; (2) the code infers the dimensionality of the mesh from the dimensionality of
+dict0;(3)wecouldrun100dimensionswithouthavingtomodifythecode,orneed
+100 For. . .loops ; and (4) under the hood, Python can run operations in C or
+C++.
+SNIPPET 20.2 VECTORIZED CARTESIAN PRODUCT
+# Cartesian product of dictionary of lists
+from itertoolsimport izip,product
+dict0={'a':['1','2'],'b':['+','*'],'c':['!','@']}
+jobs=(dict(izip(dict0,i)) for i in product(*dict0.values()))
+for i in jobs:print i
+20.3 SINGLE-THREAD VS. MULTITHREADING VS.
+MULTIPROCESSING
+A modern computer has multiple CPU sockets. Each CPU has many cores (proces-
+sors), and each core has several threads. Multithreading is the technique by which
+several applications are run in parallel on two or more threads under the same core.
+Oneadvantageofmultithreadingisthat,becausetheapplicationssharethesamecore,
+they share the same memory space. That introduces the riskthat several applications
+may write on the same memory space at the same time. To prevent that from hap-
+pening,theGlobalInterpreterLock(GIL)assignswriteaccesstoonethreadpercore
+at a time. Under the GIL, Python’s multithreading is limited to one thread per pro-
+cessor. For this reason, Python achieves parallelism through multiprocessing rather
+thanthroughactualmultithreading.Processorsdonotsharethesamememoryspace,
+hencemultiprocessingdoesnotriskwritingtothesamememoryspace;howeve
+
+--- PAGE 5 ---
+SINGLE-THREAD VS. MULTITHREADING VS. MULTIPROCESSING 305
+Pythonfunctionsimplementedforrunningonasingle-threadwilluseonlyafrac-
+tion of a modern computer’s, server’s, or cluster’s power. Let us see an example of
+how a simple task can be run inefficiently when implemented for single-thread exe-
+cution.Snippet20.3findstheearliesttime10,000Gaussianprocessesoflength1,000
+touch a symmetric double barrier of width 50 times the standard deviation.
+SNIPPET 20.3 SINGLE-THREAD IMPLEMENTATION OF A
+ONE-TOUCH DOUBLE BARRIER
+import numpy as np
+#———————————————————————————————————————
+def main0():
+# Path dependency: Sequential implementation
+r=np.random.normal(0,.01,size=(1000,10000))
+t=barrierTouch(r)
+return
+#———————————————————————————————————————
+def barrierTouch(r,width =.5):
+# find the index of the earliest barrier touch
+t,p={},np.log((1+r).cumprod(axis=0))
+for j in xrange(r.shape[1]): # go through columns
+for i in xrange(r.shape[0]): # go through rows
+if p[i,j]> =width or p[i,j]< =-width:
+t[j]=i
+continue
+return t
+#———————————————————————————————————————
+if __name__ =='__main__':
+import timeit
+print min(timeit.Timer('main0()',setup ='from __main__ import main0').repeat(5,10))
+ComparethisimplementationwithSnippet20.4.Nowthecodesplitstheprevious
+problem into 24 tasks, one per processor. The tasks are then run asynchronously in
+parallel, using 24 processors. If you run the same code on a cluster with 5000 CPUs,
+the elapsed time will be about 1/5000 of the single-thread implementation.
+SNIPPET 20.4 MULTIPROCESSING IMPLEMENTATION OF A
+ONE-TOUCH DOUBLE BARRIER
+import numpy as np
+import multiprocessing as mp
+#———————————————————————————————————————
+def main1():
+# Path dependency: Multi-threaded implementation
+r,numThreads=np.random.normal(0,.01,size=(1000,10000)),24
+parts=np.linspace(0,r.shape[0],min(numThreads,r.shape[0])+1)
+parts,jobs=np.ceil(parts).astype(int),[]
+for i in xrange(1,len(parts)):
+jobs.append(r[:,parts[i-1]:parts[i]]) # parallel jobs
+

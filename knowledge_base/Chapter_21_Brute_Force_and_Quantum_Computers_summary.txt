@@ -1,0 +1,199 @@
+=== Chapter_21_Brute_Force_and_Quantum_Computers.pdf (10 pages) ===
+
+--- PAGE 1 ---
+CHAPTER 21
+Brute Force and Quantum Computers
+21.1 MOTIV A TION
+Discrete mathematics appears naturally in multiple ML problems, including hier-
+archical clustering, grid searches, decisions based on thresholds, and integer opti-
+mization. Sometimes, these problems do not have a known analytical (closed-form)
+solution, or even a heuristic to approximate it, and our only hope is to search for it
+throughbruteforce.Inthischapter,wewillstudyhowafinancialproblem,intractable
+to modern supercomputers, can be reformulated as an integer optimization problem.
+Such a representation makes it amenable to quantum computers. From this example
+the reader can infer how to translate his particular financial ML intractable problem
+into a quantum brute force search.
+21.2 COMBINATORIAL OPTIMIZATION
+Combinatorial optimization problems can be described as problems where there is a
+finite number of feasible solutions, which result from combining the discrete values
+of a finite number of variables. As the number of feasible combinations grows, an
+exhaustive search becomes impractical. The traveling salesman problem is an exam-
+pleofacombinatorialoptimizationproblemthatisknowntobeNPhard(Woeginger
+[2003]),thatis,thecategoryofproblemsthatareatleastashardasthehardestprob-
+lems solvable is nondeterministic polynomial time.
+What makes an exhaustive search impractical is that standard computers evaluate
+and store the feasible solutions sequentially. But what if we could evaluate and store
+all feasible solutions at once? That is the goal of quantum computers. Whereas the
+bitsofastandardcomputercanonlyadoptoneoftwopossiblestates( {0,1})atonce,
+quantumcomputersrelyonqubits,whicharememoryelementsthatmayholda linear
+superpositionofbothstates.Intheory,quantumcomputerscanaccomplishthisthanks
+319
+
+--- PAGE 2 ---
+320 BRUTE FORCE AND QUANTUM COMPUTERS
+to quantum mechanical phenomena. In some implementations, qubits can support
+currentsflowingintwodirectionsatonce,henceprovidingthedesiredsuperposition.
+This linear superposition property is what makes quantum computers ideally suited
+for solving NP-hard combinatorial optimization problems. See Williams [2010] for
+a general treatise on the capabilities of quantum computers.
+The best way to understand this approach is through a particular example. We
+willnowseehowadynamicportfoliooptimizationproblemsubjecttogenerictrans-
+action cost functions can be represented as a combinatorial optimization problem,
+tractable to quantum computers. Unlike Garleanu and Pedersen [2012], we will not
+assume that the returns are drawn from an IID Gaussian distribution. This problem
+is particularly relevant to large asset managers, as the costs from excessive turnover
+andimplementationshortfallmaycriticallyerodetheprofitabilityoftheirinvestment
+strategies.
+21.3 THE OBJECTIVE FUNCTION
+Consider a set on assetsX ={ xi}, i = 1,…, N, with returns following a multivari-
+ate Normal distribution at each time horizonh = 1,…, H, with varying mean and
+variance.WewillassumethatthereturnsaremultivariateNormal,time-independent,
+however not identically distributed through time. We define a trading trajectory as
+an NxH matrix 𝜔 that determines the proportion of capital allocated to each of theN
+assets over each of theH horizons. At a particular horizonh = 1,…, H,w eh a v ea
+forecasted mean𝜇h, a forecasted varianceVh and a forecasted transaction cost func-
+tion𝜏h [𝜔].Thismeansthat,givenatradingtrajectory 𝜔,wecancomputeavectorof
+expected investment returnsr,a s
+r = diag[𝜇′𝜔]−𝜏[𝜔]
+where 𝜏[𝜔] can adopt any functional form. Without loss of generality, consider the
+following:
+r 𝜏1 [𝜔] = ∑N
+n=1 cn,1
+√
+||𝜔n,1 −𝜔∗
+n||
+r 𝜏h [𝜔] = ∑N
+n=1 cn,h
+√
+||𝜔n,h −𝜔n,h−1||,f o rh = 2,…, H
+r 𝜔∗
+n is the initial allocation to instrument n,n = 1,…, N
+𝜏[𝜔] is an Hx1 vector of transaction costs
+
+--- PAGE 3 ---
+AN INTEGER OPTIMIZATION APPROACH 321
+TheSharpeRatio(Chapter14)associatedwith rcanbecomputedas( 𝜇h beingnet
+of the risk-free rate)
+SR[r] =
+∑H
+h=1 𝜇
+′
+h𝜔h −𝜏h [𝜔]
+√∑H
+h=1 𝜔
+′
+hVh𝜔h
+21.4 THE PROBLEM
+We would like to compute the optimal trading trajectory that solves the problem
+max
+𝜔
+SR[r]
+s.t. :
+N∑
+i=1
+|𝜔i,h| = 1, ∀h = 1,…, H
+This problem attempts to compute a global dynamic optimum, in contrast to the
+staticoptimumderivedbymean-varianceoptimizers(seeChapter16).Notethatnon-
+continuoustransactioncostsareembeddedin r.Comparedtostandardportfolioopti-
+mization applications, this is not a convex (quadratic) programming problem for at
+least three reasons: (1) Returns are not identically distributed, because𝜇h and Vh
+change withh.(2) Transaction costs𝜏h [𝜔]are non-continuous and changing withh.
+(3) The objective functionSR[r] is not convex. Next, we will show how to calcu-
+latesolutionswithoutmakinguseofanyanalyticalpropertyoftheobjectivefunction
+(hence the generalized nature of this approach).
+21.5 AN INTEGER OPTIMIZATION APPROACH
+The generality of this problem makes it intractable to standard convex optimization
+techniques. Our solution strategy is to discretize it so that it becomes amenable to
+integeroptimization.Thisinturnallowsustousequantumcomputingtechnologyto
+find the optimal solution.
+21.5.1 Pigeonhole Partitions
+Suppose that we count the number of ways thatK units of capital can be allocated
+among N assets, where we assumeK > N. This is equivalent to finding the number
+of non-negative integer solutions tox1 +…+ xN = K, which has the nice combina-
+torial solution
+(
+K + N −1
+N −1
+)
+. This bears a similarity to the classic integer partitioning
+problem in number theory for which Hardy and Ramanujan (and later, Rademacher)
+proved an asymptotic expression (see Johansson [2012]). While order does not mat-
+ter in the partition problem, order is very relevant to the problem we have at hand.
+
+--- PAGE 4 ---
+322 BRUTE FORCE AND QUANTUM COMPUTERS
+Asset 1
+Asset 2
+Asset 3
+Asset 1
+Asset 2
+Asset 3
+Units of capital Units of capital
+FIGURE 21.1 Partitions(1,2,3 )and(3,2,1 )must be treated as different
+For example, ifK = 6 andN = 3, partitions(1,2,3 ) and (3,2,1 ) must be treated as
+different (obviously(2,2,2 ) does not need to be permutated). Figure 21.1 illustrates
+how order is important when allocating 6 units of capital to 3 different assets. This
+meansthatwemustconsideralldistinctpermutationsofeachpartition.Eventhough
+there is a nice combinatorial solution to find the number of such allocations, it may
+stillbecomputationallyintensivetofindas Kand Ngrowlarge.However,wecanuse
+Stirling’s approximation to easily arrive at an estimate.
+Snippet 21.1 provides an efficient algorithm to generate the set of all parti-
+tions, pK,N = {{pi}i=1,…,N |pi ∈ 𝕎, ∑N
+i=1 pi = K},where 𝕎 arethenaturalnumbers
+including zero (whole numbers).
+SNIPPET 21.1 PARTITIONS OF k OBJECTS INTO n SLOTS
+from itertools import combinations_with_replacement
+#———————————————————————————————————————
+def pigeonHole(k,n):
+# Pigeonhole problem (organize k objects in n slots)
+for j in combinations_with_replacement(xrange(n),k):
+r=[0]*n
+f o rii nj :
+r[i]+=1
+yield r
+
+--- PAGE 5 ---
+AN INTEGER OPTIMIZATION APPROACH 323
+21.5.2 Feasible Static Solutions
+We would like to compute the set of all feasible solutions at any given hori-
+zon h, which we denote Ω. Consider a partition set of K units into N assets,
+pK,N. For each partition {pi}i=1,…,N ∈ pK,N, we can define a vector of abso-
+lute weights such that |𝜔i| = 1
+K pi, where ∑N
+i=1 |𝜔i| = 1 (the full-investment con-
+straint). This full-investment (without leverage) constraint implies that every weight
+can be either positive or negative, so for every vector of absolute weights
+{|𝜔i|}i=1,…,N we can generate 2N vectors of (signed) weights. This is accom-
+plished by multiplying the items in {|𝜔i|}i=1,…,N with the items of the Carte-
+sian product of {−1,1} with N repetitions. Snippet 21.2 shows how to gen-
+erate the set Ω of all vectors of weights associated with all partitions, Ω={{ sj
+K pi
+}|||{sj}j=1,…,N ∈{ −1,1}x…x{−1,1}
+⏟⏞⏞⏞⏞⏞⏞⏞⏞⏞⏞⏞⏞⏟⏞⏞⏞⏞⏞⏞⏞⏞⏞⏞⏞⏞⏟
+N
+,{pi}i=1,…,N ∈ pK,N
+}
+.
+SNIPPET 21.2 SET 𝛀 OF ALL VECTORS ASSOCIATED WITH
+ALL PARTITIONS
+import numpy as np
+from itertools import product
+#———————————————————————————————————————
+def getAllWeights(k,n):
+#1) Generate partitions
+parts,w=pigeonHole(k,n),None
+#2) Go through partitions
+for part_ in parts:
+w_=np.array(part_)/ﬂoat(k) # abs(weight) vector
+for prod_ in product([-1,1],repeat =n): # add sign
+w_signed_=(w_*prod_).reshape(-1,1)
+if w is None:w =w_signed_.copy()
+else:w=np.append(w,w_signed_,axis=1)
+return w
+21.5.3 Evaluating Trajectories
+Given the set of all vectorsΩ, we define the set of all possible trajectoriesΦ as the
+Cartesian product ofΩ with H repetitions. Then, for every trajectory we can evalu-
+ate its transaction costs and SR, and select the trajectory with optimal performance
+across Φ. Snippet 21.3 implements this functionality. The objectparams is a list of
+dictionaries that contain the values ofC, 𝜇, V.
+

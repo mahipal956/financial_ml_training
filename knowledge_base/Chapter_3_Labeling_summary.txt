@@ -1,0 +1,145 @@
+=== Chapter_3_Labeling.pdf (16 pages) ===
+
+--- PAGE 1 ---
+CHAPTER 3
+Labeling
+3.1 MOTIV A TION
+In Chapter 2 we discussed how to produce a matrixX of financial features out of an
+unstructured dataset. Unsupervised learning algorithms can learn the patterns from
+thatmatrix X,forexamplewhetheritcontainshierarchicalclusters.Ontheotherhand,
+supervisedlearningalgorithmsrequirethattherowsin Xareassociatedwithanarray
+oflabelsorvalues y,sothatthoselabelsorvaluescanbepredictedonunseenfeatures
+samples. In this chapter we will discuss ways to label financial data.
+3.2 THE FIXED-TIME HORIZON METHOD
+Asitrelatestofinance,virtuallyallMLpaperslabelobservationsusingthefixed-time
+horizonmethod.Thismethodcanbedescribedasfollows.Considerafeaturesmatrix
+Xwith Irows,{Xi}i=1,…,I,drawnfromsomebarswithindex t = 1,…, T,where I ≤ T.
+Chapter 2, Section 2.5 discussed sampling methods that produce the set of features
+{Xi}i=1,…,I. An observationXi is assigned a labelyi ∈{ −1,0,1 },
+yi =
+⎧
+⎪
+⎨
+⎪⎩
+−1i f rti,0,ti,0+h < −𝜏
+0i f |rti,0,ti,0+h| ≤ 𝜏
+1i f rti,0,ti,0+h >𝜏
+where 𝜏 is a pre-defined constant threshold,ti,0 is the index of the bar immediately
+after Xi takes place,ti,0 + h is the index of theh-th bar afterti,0, andrti,0,ti,0+h is the
+price return over a bar horizonh,
+rti,0,ti,0+h =
+pti,0+h
+pti,0
+−1
+43
+
+--- PAGE 2 ---
+44 LABELING
+Because the literature almost always works with time bars,himplies a fixed-time
+horizon. The bibliography section lists multiple ML studies, of which Dixon et al.
+[2016] is a recent example of this labeling method. Despite its popularity, there are
+several reasons to avoid this approach in most cases. First, as we saw in Chapter
+2, time bars do not exhibit good statistical properties. Second, the same threshold
+𝜏 is applied regardless of the observed volatility. Suppose that𝜏 = 1E−2, where
+sometimes we label an observation asyi = 1 subject to a realized bar volatility of
+𝜎ti,0 = 1E−4 (e.g., during the night session), and sometimes𝜎ti,0 = 1E−2 (e.g.,
+around the open). The large majority of labels will be 0, even if returnrti,0,ti,0+h was
+predictable and statistically significant.
+In other words, it is a very common error to label observations according to a
+fixed threshold on time bars. Here are a couple of better alternatives. First, label per
+a varying threshold𝜎ti,0, estimated using a rolling exponentially weighted standard
+deviation of returns. Second, use volume or dollar bars, as their volatilities are much
+closer to constant (homoscedasticity). But even these two improvements miss a key
+flawofthefixed-timehorizonmethod:thepathfollowedbyprices.Everyinvestment
+strategyhasstop-losslimits,whethertheyareself-imposedbytheportfoliomanager,
+enforcedbytheriskdepartment,ortriggeredbyamargincall.Itissimplyunrealistic
+tobuildastrategythatprofitsfrompositionsthatwouldhavebeenstopped-outbythe
+exchange.Thatvirtuallynopublicationaccountsforthatwhenlabelingobservations
+tells you something about the current state of the investment literature.
+3.3 COMPUTING DYNAMIC THRESHOLDS
+As argued in the previous section, in practice we want to set profit taking and stop-
+losslimitsthatareafunctionoftherisksinvolvedinabet.Otherwise,sometimeswe
+will be aiming too high (𝜏≫𝜎 ti,0), and sometimes too low (𝜏≪𝜎 ti,0), considering
+the prevailing volatility.
+Snippet 3.1 computes the dai
+
+--- PAGE 3 ---
+THE TRIPLE-BARRIER METHOD 45
+3.4 THE TRIPLE-BARRIER METHOD
+HereIwillintroduceanalternativelabelingmethodthatIhavenotfoundintheliter-
+ature.Ifyouareaninvestmentprofessional,Ithinkyouwillagreethatitmakesmore
+sense. I call it the triple-barrier method because it labels an observation according to
+thefirstbarriertouchedoutofthreebarriers.First,wesettwohorizontalbarriersand
+oneverticalbarrier.Thetwohorizontalbarriersaredefinedbyprofit-takingandstop-
+loss limits, which are a dynamic function of estimated volatility (whether realized
+or implied). The third barrier is defined in terms of number of bars elapsed since the
+positionwastaken(anexpirationlimit).Iftheupper barrieristouched first,welabel
+the observation as a 1. If the lower barrier is touched first, we label the observation
+as a−1. If the vertical barrier is touched first, we have two choices: the sign of the
+return, or a 0. I personally prefer the former as a matter of realizing a profit or loss
+within limits, but you should explore whether a 0 works better in your particular
+problems.
+Youmayhavenoticedthatthetriple-barriermethodispath-dependent.Inorderto
+labelanobservation,wemusttakeintoaccounttheentirepathspanning[ ti,0, ti,0 + h],
+where hdefinestheverticalbarrier(theexpirationlimit).Wewilldenote ti,1 thetime
+ofthefirstbarriertouch,andthereturnassociatedwiththeobservedfeatureis rti,0,ti,1.
+For the sake of clarity,ti,1 ≤ ti,0 + h and the horizontal barriers are not necessarily
+symmetric.
+Snippet 3.2 implements the triple-barrier method. The function receives four
+arguments:
+r close: A pandas series of prices.
+r events: A pandas dataframe, with columns,
+◦ t1: The timestamp of vertical barrier. When the value isnp.nan, there will
+not be a vertical barrier.
+◦ trgt: The unit width of the horizontal barriers.
+r ptSl: A list of two non-negative float values:
+◦ ptSl[0]:Thefactorthatmultiplies trgttosetthewidthoftheupperbarrier.
+If 0, there will not be an upper barrier.
+◦ ptSl[1]:Thefactorthatmultiplies trgttosetthewidth
+
+--- PAGE 4 ---
+46 LABELING
+if ptSl[0]>0:pt=ptSl[0]*events_['trgt']
+else:pt=pd.Series(index=events.index) # NaNs
+if ptSl[1]>0:sl=-ptSl[1]*events_['trgt']
+else:sl=pd.Series(index=events.index) # NaNs
+for loc,t1 in events_['t1'].ﬁllna(close.index[-1]).iteritems():
+df0=close[loc:t1] # path prices
+df0=(df0/close[loc]-1)*events_.at[loc,'side'] # path returns
+out.loc[loc,'sl']=df0[df0<sl[loc]].index.min() # earliest stop loss.
+out.loc[loc,'pt']=df0[df0>pt[loc]].index.min() # earliest profit taking.
+return out
+Theoutputfromthisfunctionisapandasdataframecontainingthetimestamps(if
+any)atwhicheachbarrierwastouched.Asyoucanseefromthepreviousdescription,
+the method considers the possibility that each of the three barriers may be disabled.
+Let us denote a barrier configuration by the triplet [pt,sl,t1], where a 0 means
+that the barrier is inactive and a 1 means that the barrier is active. The possible eight
+configurations are:
+r Three useful configurations:
+◦ [1,1,1]: This is the standard setup, where we define three barrier exit condi-
+tions.Wewouldliketorealizeaprofit,butwehaveamaximumtolerancefor
+losses and a holding period.
+◦ [0,1,1]: In this setup, we would like to exit after a number of bars, unless we
+are stopped-out.
+◦ [1,1,0]:Herewewouldliketotakeaprofitaslongaswearenotstopped-out.
+Thisissomewhatunrealisticinthatwearewillingtoholdthepositionforas
+long as it takes.
+r Three less realistic configurations:
+◦ [0,0,1]: This is equivalent to the fixed-time horizon method. It may still be
+usefulwhenappliedtovolume-,dollar-,orinformation-drivenbars,andmul-
+tiple forecasts are updated within the horizon.
+◦ [1,0,1]: A position is held until a profit is made or the maximum holding
+period is exceeded, without regard for the intermediate unrealized losses.
+◦ [1,0,0]: A position is held until a profit is made. It could mean being locked
+on a losing position for years.
+r Two illogical configurations:
+◦ [0,1,0]: This is an aimless configuration, where we hold a position until we
+are stopped-out.
+◦ [0,0
+
+--- PAGE 5 ---
+THE TRIPLE-BARRIER METHOD 47
+(a)
+(b)
+FIGURE 3.1 Two alternative configurations of the triple-barrier method
+
