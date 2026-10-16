@@ -6,7 +6,7 @@ on:
       prompt:
         description: "What should Gemini code or fix?"
         required: true
-        default: "Add new financial indicators and write unit tests"
+        default: "Add data/ directory with sample market data and README"
   issues:
     types: [opened]
   issue_comment:
@@ -14,7 +14,6 @@ on:
 
 permissions:
   contents: write
-  pull-requests: write
   issues: write
 
 jobs:
@@ -55,13 +54,14 @@ jobs:
           TASK_PROMPT: ${{ env.PROMPT }}
         run: python .github/scripts/gemini_assistant.py
 
-      - name: Create Pull Request with Gemini's Code
-        uses: peter-evans/create-pull-request@v6
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: "🤖 Gemini: Automated code changes"
-          branch: "gemini/automated-update-${{ github.run_id }}"
-          title: "🤖 Gemini Autonomous Code Update"
-          body-path: gemini_pr_summary.txt
-          base: main
-          delete-branch: true
+      - name: Commit and Push Directly to Main
+        run: |
+          git config --global user.name "Gemini Autonomous Assistant"
+          git config --global user.email "gemini-bot@google.com"
+          git add -A
+          if ! git diff --staged --quiet; then
+            git commit -m "🤖 Gemini: $PROMPT"
+            git push origin main
+          else
+            echo "No changes generated."
+          fi
