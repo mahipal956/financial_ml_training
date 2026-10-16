@@ -20,7 +20,7 @@ def get_gemini_response(prompt, context):
         print("ERROR: GEMINI_API_KEY environment variable is missing.")
         sys.exit(1)
 
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key={api_key}"
+    candidate_models = ["gemini-3.1-flash-lite", "gemini-3.5-flash", "gemini-3.8-flash"]
     
     system_instruction = (
         "You are an expert autonomous software engineer. "
@@ -47,15 +47,20 @@ def get_gemini_response(prompt, context):
     }
 
     headers = {"Content-Type": "application/json"}
-    response = requests.post(url, headers=headers, json=payload)
     
-    if response.status_code != 200:
-        print(f"Gemini API Error ({response.status_code}): {response.text}")
-        sys.exit(1)
+    for m in candidate_models:
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{m}:generateContent?key={api_key}"
+        print(f"Calling model: {m}...")
+        response = requests.post(url, headers=headers, json=payload, timeout=45)
+        if response.status_code == 200:
+            data = response.json()
+            text = data["candidates"][0]["content"]["parts"][0]["text"]
+            return json.loads(text)
+        else:
+            print(f"Notice: {m} returned {response.status_code}, trying next model...")
 
-    data = response.json()
-    text = data["candidates"][0]["content"]["parts"][0]["text"]
-    return json.loads(text)
+    print("All candidate models exhausted.")
+    sys.exit(1)
 
 def main():
     task_prompt = os.environ.get("TASK_PROMPT", "Optimize code and add unit tests")
