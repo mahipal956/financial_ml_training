@@ -1,0 +1,1 @@
+Created data/ directory with a sample market data CSV template and a README.md file explaining the required data ingestion formats for the AFML pipeline.
