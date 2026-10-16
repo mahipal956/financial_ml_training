@@ -20,7 +20,7 @@ def get_gemini_response(prompt, context):
         print("ERROR: GEMINI_API_KEY environment variable is missing.")
         sys.exit(1)
 
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-pro-preview:generateContent?key={api_key}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key={api_key}"
     
     system_instruction = (
         "You are an expert autonomous software engineer. "
