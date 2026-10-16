@@ -1,0 +1,67 @@
+name: Gemini Autonomous Code Assistant
+
+on:
+  workflow_dispatch:
+    inputs:
+      prompt:
+        description: "What should Gemini code or fix?"
+        required: true
+        default: "Add new financial indicators and write unit tests"
+  issues:
+    types: [opened]
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  gemini-code:
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'issues' && startsWith(github.event.issue.title, '[gemini]')) ||
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@gemini'))
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Dependencies
+        run: pip install requests
+
+      - name: Determine Task Prompt
+        id: get_prompt
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "PROMPT=${{ github.event.inputs.prompt }}" >> $GITHUB_ENV
+          elif [ "${{ github.event_name }}" == "issues" ]; then
+            echo "PROMPT=${{ github.event.issue.body }}" >> $GITHUB_ENV
+          elif [ "${{ github.event_name }}" == "issue_comment" ]; then
+            echo "PROMPT=${{ github.event.comment.body }}" >> $GITHUB_ENV
+          fi
+
+      - name: Run Gemini Assistant
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          TASK_PROMPT: ${{ env.PROMPT }}
+        run: python .github/scripts/gemini_assistant.py
+
+      - name: Create Pull Request with Gemini's Code
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "🤖 Gemini: Automated code changes"
+          branch: "gemini/automated-update-${{ github.run_id }}"
+          title: "🤖 Gemini Autonomous Code Update"
+          body-path: gemini_pr_summary.txt
+          base: main
+          delete-branch: true
