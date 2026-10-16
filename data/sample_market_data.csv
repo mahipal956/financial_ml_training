@@ -1,0 +1,4 @@
+Close_Time_UTC,Close,Bar_Index,Trade_Lifespan_Bars,Primary_Model_Side,Meta_Label_Bin_y_Binary,X_ATR_14,X_Target_Vol,X_Close_FFD,X_RSI_14,Sample_Weight_w
+2026-01-01 00:00:00,150.25,1,5,1,1,0.12,0.005,0.001,55.2,1.0
+2026-01-01 00:05:00,150.30,2,5,-1,0,0.13,0.006,0.002,58.1,1.0
+2026-01-01 00:10:00,150.28,3,5,1,1,0.11,0.004,-0.001,52.4,1.0
